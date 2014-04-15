@@ -66,6 +66,8 @@ typedef struct particle_s
 
 	int			accumroll;
 
+	float		stretch;	// leilei
+
 } cparticle_t;
 
 typedef enum

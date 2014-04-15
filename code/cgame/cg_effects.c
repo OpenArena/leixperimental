@@ -158,7 +158,6 @@ localEntity_t *CG_SmokePuff( const vec3_t p, const vec3_t vel,
 
 	re->reType = RT_SPRITE;
 	re->radius = le->radius;
-
 	return le;
 }
 
@@ -617,6 +616,48 @@ void CG_SpurtBlood( vec3_t origin, vec3_t velocity, int hard ) {
 	//	VectorCopy( velocity, blood->pos.trDelta );
 
 }
+
+
+/*
+==================
+CG_SpurtBlood2 (LEILEI)
+==================
+*/
+void CG_SpurtBlood2( vec3_t origin, vec3_t velocity, int hard, int size, int duration ) {
+	localEntity_t	*blood;
+//		if ( !cg_blood.integer ) {	return;	}
+
+	
+	velocity[0] = velocity[0] * hard * crandom()*460;
+	velocity[1] = velocity[1] * hard * crandom()*460;
+	velocity[2] = velocity[2] * hard * crandom()*566 + 65;
+
+//	velocity[0] = crandom()* hard * velocity;
+//	velocity[1] = crandom()* hard * velocity;
+//	velocity[2] = crandom()* hard * velocity;
+
+		blood = CG_SmokePuff( origin, velocity, 
+					size,		// radius
+					  1, 1, 1, 1,	// color
+					 duration,		// trailTime
+					 cg.time,		// startTime
+					  0,		// fadeInTime
+					  0,		// flags
+					  cgs.media.lbldShader1 );
+		// use the optimized version
+		blood->leType = LE_FALL_SCALE_FADE;
+		blood->leType = LE_GORE;
+		blood->pos.trType = TR_GRAVITY;
+		VectorCopy( velocity, blood->pos.trDelta );
+		blood->pos.trDelta[2] = 55;
+		if (crandom() < 0.8){
+		blood->leMarkType = LEMT_BURN;
+		blood->leBounceSoundType = LEBS_BLOOD;
+		}
+	//	VectorCopy( velocity, blood->pos.trDelta );
+
+}
+
 /*
 ==================
 CG_LaunchGib

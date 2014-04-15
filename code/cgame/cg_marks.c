@@ -339,6 +339,13 @@ typedef struct particle_s
 
 	int			accumroll;
 
+	// leilei
+	float		stretch;	
+	vec3_t		angle;
+	vec3_t		avelocity;
+	vec3_t		src;
+	vec3_t		dest;
+	float		airfriction;
 } cparticle_t;
 
 typedef enum
@@ -358,7 +365,9 @@ typedef enum
 	P_SMOKE_IMPACT,
 	P_BUBBLE,
 	P_BUBBLE_TURBULENT,
-	P_SPRITE
+	P_SPRITE,
+	P_BEAM,	// leilei	- angle not calculated
+	P_SPARK	// leilei	- angle and length recalculated from velocity
 } particle_type_t;
 
 #define	MAX_SHADER_ANIMS		32
@@ -428,7 +437,7 @@ void CG_ClearParticles (void)
 	initparticles = qtrue;
 }
 
-
+void CG_LeiTrailPoly( vec3_t source, vec3_t dest, vec3_t colar, qhandle_t ashader, vec3_t val, float scaled);
 /*
 =====================
 CG_AddParticleToScene
@@ -447,6 +456,8 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 	vec3_t		color;
 	polyVert_t	TRIverts[3];
 	vec3_t		rright2, rup2;
+	vec3_t		oldorg;
+
 
 	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY
 		|| p->type == P_BUBBLE || p->type == P_BUBBLE_TURBULENT)
@@ -477,6 +488,8 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				if (org[2] < p->end)			
 				{	
 					p->time = cg.time;	
+
+
 					VectorCopy (org, p->org); // Ridah, fixes rare snow flakes that flicker on the ground
 									
 					while (p->org[2] < p->end) 
@@ -501,7 +514,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 
 			p->alpha = 1;
 		}
-		
+	
 		// Ridah, had to do this or MAX_POLYS is being exceeded in village1.bsp
 		if (Distance( cg.snap->ps.origin, org ) > 1024) {
 			return;
@@ -656,6 +669,198 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		verts[3].modulate[1] = 255;	
 		verts[3].modulate[2] = 255;	
 		verts[3].modulate[3] = 255;	
+	}
+		else if (p->type == P_SPARK)	// leilei - some of this was butchered from darkplaces
+	{
+		float		len, begin, end;
+		vec3_t		start, finish, forward;
+		vec3_t		source, dest, west;
+		vec3_t		line;
+		vec3_t		realvel;
+		float		lenfactor;
+
+
+		realvel[0] = p->vel[0] + p->accel[0];
+		realvel[1] = p->vel[1] + p->accel[1];
+		realvel[2] = p->vel[2] + p->accel[2];
+		
+		source[0] = p->src[0];
+		source[1] = p->src[1];
+		source[2] = p->src[2];
+
+		//AngleVectors ( p->angles, dest, dest, dest);
+
+		dest[0] = p->dest[0];
+		dest[1] = p->dest[1];
+		dest[2] = p->dest[2];
+
+		west[0] = dest[0] - (p->vel[0]*time - p->accel[0]*time2 * 2);
+		west[1] = dest[1] - (p->vel[1]*time - p->accel[1]*time2 * 2);
+		west[2] = dest[2] - ( p->vel[2]*time - p->accel[2]*time2 * 2);
+
+	//	source[0] = west[0];
+	//	source[1] = west[1];
+	//	source[2] = west[2];
+
+		VectorSet (color, 1.0, 1.0, 1.0);
+
+		time = cg.time - p->time;
+		time2 = p->endtime - p->time;
+		ratio = time / time2;
+		
+		if (cg.time > p->startfade)
+		{
+			invratio = 1 - ( (cg.time - p->startfade) / (p->endtime - p->startfade) );
+
+			if (p->color == EMISIVEFADE)
+			{
+				float fval;
+				fval = (invratio * invratio);
+				if (fval < 0)
+					fval = 0;
+				VectorSet (color, fval , fval , fval );
+			}
+			invratio *= p->alpha;
+		}
+		else 
+			invratio = 1 * p->alpha;
+
+		if (invratio > 1)
+			invratio = 1;
+	
+		width = p->width + ( ratio * ( p->endwidth - p->width) );
+		height = p->height + ( ratio * ( p->endheight - p->height) );
+
+		{
+			vec3_t temp;
+
+			vectoangles (rforward, temp);
+			p->accumroll += p->roll;
+			temp[ROLL] += p->accumroll * 0.1;
+			AngleVectors ( temp, NULL, rright2, rup2);
+		}
+		// Beamy stuff here
+
+		// BEAM
+
+		VectorSubtract( dest, source, forward );
+		len = VectorNormalize( forward );
+
+
+		len = VectorLength(realvel);
+		//VectorNormalize2(realvel, pvup);
+
+	//	len = 32 * 0.04 * len;
+		if(len < p->width * 0.5)
+		len = p->width * 0.5;
+
+		//begin = len - (p->width * 4);
+		//end = len - (p->width * 0.5);
+		p->stretch = lenfactor * 0.1 * len;
+		begin = -p->stretch;
+		end = p->width;
+
+		VectorMA( source, begin, forward, start );
+		VectorMA( source, end, forward, finish );
+	
+		line[0] = DotProduct( forward, cg.refdef.viewaxis[1] );
+		line[1] = DotProduct( forward, cg.refdef.viewaxis[2] );
+	
+		VectorScale( cg.refdef.viewaxis[1], line[1], pvright );
+		VectorMA( pvright, -line[0], cg.refdef.viewaxis[2], pvright );
+		VectorNormalize( pvright );
+
+
+
+//		VectorMA (org, -p->height, pvup, point);	
+//		VectorMA (point, -p->width, pvright, point);	
+//		VectorCopy (point, verts[0].xyz);	
+		VectorMA( finish, p->width, pvright, verts[0].xyz );
+		verts[0].st[0] = 0;	
+		verts[0].st[1] = 0;	
+		verts[0].modulate[0] = 255 * color[0];	
+		verts[0].modulate[1] = 255 * color[1];	
+		verts[0].modulate[2] = 255 * color[2];	
+		verts[0].modulate[3] = 255 * invratio;	
+
+//		VectorMA (org, -p->height, pvup, point);	
+//		VectorMA (point, p->width, pvright, point);	
+//		VectorCopy (point, verts[1].xyz);	
+		VectorMA( finish, -p->width, pvright, verts[1].xyz );
+		verts[1].st[0] = 0;	
+		verts[1].st[1] = 1;	
+		verts[1].modulate[0] = 255 * color[0];	
+		verts[1].modulate[1] = 255 * color[1];	
+		verts[1].modulate[2] = 255 * color[2];	
+		verts[1].modulate[3] = 255 * invratio;	
+
+//		VectorMA (org, p->height, pvup, point);	
+//		VectorMA (point, p->width, pvright, point);	
+//		VectorCopy (point, verts[2].xyz);	
+		VectorMA( start, -p->width, pvright, verts[2].xyz );
+		verts[2].st[0] = 1;	
+		verts[2].st[1] = 1;	
+		verts[2].modulate[0] = 255 * color[0];	
+		verts[2].modulate[1] = 255 * color[1];	
+		verts[2].modulate[2] = 255 * color[2];	
+		verts[2].modulate[3] = 255 * invratio;	
+
+//		VectorMA (org, p->height, pvup, point);	
+//		VectorMA (point, -p->width, pvright, point);	
+//		VectorCopy (point, verts[3].xyz);	
+		VectorMA( start, p->width, pvright, verts[3].xyz );
+		verts[3].st[0] = 1;	
+		verts[3].st[1] = 0;	
+		verts[3].modulate[0] = 255 * color[0];	
+		verts[3].modulate[1] = 255 * color[1];	
+		verts[3].modulate[2] = 255 * color[2];	
+		verts[3].modulate[3] = 255  * invratio;	
+
+
+
+
+	/*
+		VectorMA (org, -p->height, pvup, point);	
+		VectorMA (point, -p->width, pvright, point);	
+		VectorCopy (point, verts[0].xyz);	
+		verts[0].st[0] = 0;	
+		verts[0].st[1] = 0;	
+		verts[0].modulate[0] = 255 * color[0];	
+		verts[0].modulate[1] = 255 * color[1];	
+		verts[0].modulate[2] = 255 * color[2];	
+		verts[0].modulate[3] = 255 * invratio;	
+
+		VectorMA (org, -p->height, pvup, point);	
+		VectorMA (point, p->width, pvright, point);	
+		VectorCopy (point, verts[1].xyz);	
+		verts[1].st[0] = 0;	
+		verts[1].st[1] = 1;	
+		verts[1].modulate[0] = 255 * color[0];	
+		verts[1].modulate[1] = 255 * color[1];	
+		verts[1].modulate[2] = 255 * color[2];	
+		verts[1].modulate[3] = 255 * invratio;	
+
+		VectorMA (org, p->height, pvup, point);	
+		VectorMA (point, p->width, pvright, point);	
+		VectorCopy (point, verts[2].xyz);	
+		verts[2].st[0] = 1;	
+		verts[2].st[1] = 1;	
+		verts[2].modulate[0] = 255 * color[0];	
+		verts[2].modulate[1] = 255 * color[1];	
+		verts[2].modulate[2] = 255 * color[2];	
+		verts[2].modulate[3] = 255 * invratio;	
+
+		VectorMA (org, p->height, pvup, point);	
+		VectorMA (point, -p->width, pvright, point);	
+		VectorCopy (point, verts[3].xyz);	
+		verts[3].st[0] = 1;	
+		verts[3].st[1] = 0;	
+		verts[3].modulate[0] = 255 * color[0];	
+		verts[3].modulate[1] = 255 * color[1];	
+		verts[3].modulate[2] = 255 * color[2];	
+		verts[3].modulate[3] = 255  * invratio;	
+		*/
+		
 	}
 	else if (p->type == P_SMOKE || p->type == P_SMOKE_IMPACT)
 	{// create a front rotating facing polygon
@@ -1070,16 +1275,20 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		return;
 	}
 
+
+
 	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY)
 		trap_R_AddPolyToScene( p->pshader, 3, TRIverts );
 	else
 		trap_R_AddPolyToScene( p->pshader, 4, verts );
 
+
+
 }
 
 // Ridah, made this static so it doesn't interfere with other files
 static float roll = 0.0;
-
+#define MINe(p,q) ((p <= q) ? p : q)
 /*
 ===============
 CG_AddParticles
@@ -1091,10 +1300,14 @@ void CG_AddParticles (void)
 	float			alpha;
 	float			time, time2;
 	vec3_t			org;
+	vec3_t			oldorg;	// leilei
+	vec3_t			diffed;	// leilei
 	int				color;
 	cparticle_t		*active, *tail;
+	float *v3f, *t2f, *c4f;
 	int				type;
 	vec3_t			rotate_ang;
+	vec3_t			colar;
 
 	if (!initparticles)
 		CG_ClearParticles ();
@@ -1119,6 +1332,7 @@ void CG_AddParticles (void)
 		next = p->next;
 
 		time = (cg.time - p->time)*0.001;
+		VectorCopy(p->org, oldorg);
 
 		alpha = p->alpha + time*p->alphavel;
 		if (alpha <= 0)
@@ -1145,6 +1359,25 @@ void CG_AddParticles (void)
 			}
 
 		}
+
+		// leilei
+		if (p->type == P_SPARK)
+		{
+
+			if (cg.time > p->endtime)
+			{
+				p->next = free_particles;
+				free_particles = p;
+				p->type = 0;
+				p->color = 0;
+				p->alpha = 0;
+			
+				continue;
+			}
+
+		}
+
+
 
 		if (p->type == P_WEATHER_FLURRY)
 		{
@@ -1202,13 +1435,55 @@ void CG_AddParticles (void)
 
 		time2 = time*time;
 
+	//	p->vel[0] -= p->airfriction; // leilei - air friction
+	//	p->vel[1] -= p->airfriction; // leilei - air friction
+	//	p->vel[2] -= p->airfriction; // leilei - air friction
+		{
+		float f;
+	//	f = 1.0f - MINe(p->airfriction * time, 1);
+	//	VectorScale(p->vel, f, p->vel);
+		}
+
+		oldorg[0] = p->org[0] - p->vel[0]*time + p->accel[0]*time2;
+		oldorg[1] = p->org[1] - p->vel[1]*time + p->accel[1]*time2;
+		oldorg[2] = p->org[2] - p->vel[2]*time + p->accel[2]*time2;
+
+
+
 		org[0] = p->org[0] + p->vel[0]*time + p->accel[0]*time2;
 		org[1] = p->org[1] + p->vel[1]*time + p->accel[1]*time2;
 		org[2] = p->org[2] + p->vel[2]*time + p->accel[2]*time2;
 
+		//VectorSubtract(org, p->org, diffed);
+
+		diffed[0] = p->vel[0] + p->accel[0];
+		diffed[1] = p->vel[1] + p->accel[1];
+		diffed[2] = p->vel[2] + p->accel[2];
+
+
+
 		type = p->type;
+	
 
 		CG_AddParticleToScene (p, org, alpha);
+
+		// leilei - trail stuffs
+
+		vectoangles( p->vel, p->angle );
+		p->stretch = 3;
+		p->src[0] = org[0];
+		p->src[1] = org[1];
+		p->src[2] = org[2];
+
+		p->dest[0] = org[0] + p->vel[0]*time + p->accel[0]*time2;
+		p->dest[1] = org[1] + p->vel[1]*time + p->accel[1]*time2;
+		p->dest[2] = org[2] + p->vel[2]*time + p->accel[2]*time2;
+
+
+
+		
+
+
 	}
 
 	active_particles = active;
@@ -2282,6 +2557,114 @@ void CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, 
 // LEILEI ENHANCEMENT PARTICLE EFFECTS
 
 
+/*
+===============
+CG_LeiTrailPoly
+
+Stupid hack based on the bullet tracer to make a particle appear to streak.
+===============
+*/
+void CG_LeiTrailPoly( vec3_t source, vec3_t dest, vec3_t colar, qhandle_t ashader, vec3_t val, float scaled) 
+{
+	vec3_t		forward, right;
+	polyVert_t	verts[4];
+	vec3_t		line;
+	float		len, begin, end;
+	vec3_t		start, finish;
+	vec3_t		midpoint;
+	float 		halowidth;
+//	vec3_t		colar;
+	vec3_t		dast;
+
+	dast[0] = dest[0] + source[0] * 0.5;
+	dast[1] = dest[1] + source[1] * 0.5;
+	dast[2] = dest[2] + source[2] * 0.5;
+
+
+	VectorSubtract( dest, source, forward );
+	len = VectorNormalize( forward );
+
+	//VectorMA(source, -len, dest, val);
+	//VectorMA(source, len, dest, val);
+
+
+	//len = VectorNormalize( val );
+
+	//VectorNormalize2(p->vel, up);
+//	len = val[0] + val[1] + val[2];
+//	len = 75;
+
+
+	
+
+	halowidth = len * 0.1;
+
+	if (halowidth > scaled)
+		halowidth = scaled;
+
+	// start at least a little ways from the muzzle
+	if ( len < 0 ) {
+		return;
+	}
+//	begin = 50 * (len - 60);
+	begin = 0;
+
+	end = len;
+//	if ( end > len ) {
+//		end = len;
+//	}
+//	VectorMA( source, begin, forward, start );
+//	VectorMA( source, end, forward, finish );
+
+	VectorMA( source, begin, forward, start );
+	VectorMA( source, end, forward, finish );
+
+
+	line[0] = DotProduct( forward, cg.refdef.viewaxis[1] );
+	line[1] = DotProduct( forward, cg.refdef.viewaxis[2] );
+
+	VectorScale( cg.refdef.viewaxis[1], line[1], right );
+	VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+	VectorNormalize( right );
+
+	VectorMA( finish, halowidth, right, verts[0].xyz );
+	verts[0].st[0] = 0;
+	verts[0].st[1] = 0;
+	verts[0].modulate[0] = colar[0];
+	verts[0].modulate[1] = colar[1];
+	verts[0].modulate[2] = colar[2];
+	verts[0].modulate[3] = 255;
+
+	VectorMA( finish, -halowidth, right, verts[1].xyz );
+	verts[1].st[0] = 0;
+	verts[1].st[1] = 1;
+	verts[1].modulate[0] = colar[0];
+	verts[1].modulate[1] = colar[1];
+	verts[1].modulate[2] = colar[2];
+	verts[1].modulate[3] = 255;
+
+	VectorMA( start, -halowidth, right, verts[2].xyz );
+	verts[2].st[0] = 1;
+	verts[2].st[1] = 1;
+	verts[2].modulate[0] = colar[0];
+	verts[2].modulate[1] = colar[1];
+	verts[2].modulate[2] = colar[2];
+	verts[2].modulate[3] = 255;
+
+	VectorMA( start, halowidth, right, verts[3].xyz );
+	verts[3].st[0] = 1;
+	verts[3].st[1] = 0;
+	verts[3].modulate[0] = colar[0];
+	verts[3].modulate[1] = colar[1];
+	verts[3].modulate[2] = colar[2];
+	verts[3].modulate[3] = 255;
+
+	trap_R_AddPolyToScene( ashader, 4, verts );
+
+}
+
+
+
 // sparks!
 // for small arms
 
@@ -2301,7 +2684,7 @@ void CG_LeiSparks (vec3_t org, vec3_t vel, int duration, float x, float y, float
 	p->startfade = cg.time + duration/2;
 	
 	p->color = EMISIVEFADE;
-	p->alpha = 0.8f;
+	p->alpha = 1.0f;
 	p->alphavel = 0.8f;
 
 	p->height = 4;
@@ -2311,33 +2694,123 @@ void CG_LeiSparks (vec3_t org, vec3_t vel, int duration, float x, float y, float
 
 	p->pshader = cgs.media.lspkShader1;
 
-	p->type = P_SMOKE;
+	//p->type = P_SMOKE;
+	p->type = P_SPARK;
+
 	
 	VectorCopy(org, p->org);
 
-	p->org[0] += (crandom() * x);
-	p->org[1] += (crandom() * y);
+//	p->org[0] += (crandom() * x);
+//	p->org[1] += (crandom() * y);
 
-	p->vel[0] = vel[0] * 75;
-	p->vel[1] = vel[1] * 75;
-	p->vel[2] = vel[2] * 75;
+//	p->vel[0] = vel[0] * 75;
+//	p->vel[1] = vel[1] * 75;
+//	p->vel[2] = vel[2] * 75;
 
 
 	p->accel[0] = p->accel[1] = p->accel[2] = 0;
 
-	p->vel[0] += (crandom() * speed);
-	p->vel[1] += (crandom() * speed);
-	p->vel[2] += speed + (crandom() * speed);	
+//	p->vel[0] += (crandom() * speed);
+//	p->vel[1] += (crandom() * speed);
+//	p->vel[2] += speed + (crandom() * speed);	
 
-	p->vel[0] += (crandom() * 24);
-	p->vel[1] += (crandom() * 24);
-	p->vel[2] += (20 + (crandom() * 180));	
+	p->vel[0] += (crandom() * 824);
+	p->vel[1] += (crandom() * 824);
+	p->vel[2] += (crandom() * 824);
 
-		p->accel[0] = crandom()*6;
-		p->accel[1] = crandom()*6;
-		p->accel[2] = -PARTICLE_GRAVITY*7.2;
+	p->vel[0] *= vel[0] * 2;
+	p->vel[1] *= vel[1] * 2;
+	p->vel[2] *= vel[2] * 2;
+
+
+//	p->vel[2] += (20 + (crandom() `* 180));	
+
+
+		p->accel[0] = 0;
+		p->accel[1] = 0;
+		p->accel[2] = -PARTICLE_GRAVITY * 5;
+
+
+//		p->accel[0] = crandom()*6;
+//		p->accel[1] = crandom()*6;
+//		p->accel[2] = -PARTICLE_GRAVITY*7.2;
+
+	p->airfriction = 8;
 	
 }
+
+
+void CG_LeiBlood2 (vec3_t org, vec3_t vel, int duration, float x, float y, float speed, float dam)
+{
+	cparticle_t	*p;
+
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+	p->time = cg.time;
+	
+	p->endtime = cg.time + duration;
+	p->startfade = cg.time + duration/2;
+	
+	p->color = EMISIVEFADE;
+	p->alpha = 1.0f;
+	p->alphavel = 0.8f;
+
+	p->height = 8 * dam;
+	p->width = 8 * dam;
+	p->endheight = 4;
+	p->endwidth = 4;
+
+	p->pshader = cgs.media.lbldShader1;
+
+	p->type = P_SMOKE;
+	//p->type = P_SPARK;
+
+	
+	VectorCopy(org, p->org);
+
+//	p->org[0] += (crandom() * x);
+//	p->org[1] += (crandom() * y);
+
+//	p->vel[0] = vel[0] * 75;
+//	p->vel[1] = vel[1] * 75;
+//	p->vel[2] = vel[2] * 75;
+
+
+	p->accel[0] = p->accel[1] = p->accel[2] = 0;
+
+//	p->vel[0] += (crandom() * speed);
+//	p->vel[1] += (crandom() * speed);
+//	p->vel[2] += speed + (crandom() * speed);	
+
+	p->vel[0] += (crandom() * 824);
+	p->vel[1] += (crandom() * 824);
+	p->vel[2] += (crandom() * 824);
+
+	p->vel[0] *= vel[0] * speed;
+	p->vel[1] *= vel[1] * speed;
+	p->vel[2] *= vel[2] * speed;
+
+
+	//p->vel[2] += (20 + (crandom() `* 180));	
+
+
+		p->accel[0] = 0;
+		p->accel[1] = 0;
+		p->accel[2] = -PARTICLE_GRAVITY * 3;
+
+
+//		p->accel[0] = crandom()*6;
+//		p->accel[1] = crandom()*6;
+//		p->accel[2] = -PARTICLE_GRAVITY*7.2;
+
+	//p->airfriction = 19;
+	
+}
+
 
 // a different sort of puff
 

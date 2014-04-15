@@ -2572,7 +2572,7 @@ static void CG_DrawCrosshair(void)
 		}
 	}
 
-	x = cg_crosshairX.integer;
+	x = cg_crosshairX.integer - cgs.screenXBias * 0.65; // leilei - widescreen adjust - NOTE: THIS IS WRONG SOMEHOW
 	y = cg_crosshairY.integer;
 	CG_AdjustFrom640( &x, &y, &w, &h );
 

@@ -203,6 +203,118 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 				animations[i].flipflop = qfalse;
 				continue;
 			}
+			// LEILEI - run animation fallback.
+			if( i == TORSO_RUN ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_RUN2 ) {
+				animations[i].firstFrame = animations[TORSO_STAND2].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND2].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND2].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND2].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND2].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_RUN3 ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_STAND3 ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_JUMP ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_JUMP2 ) {
+				animations[i].firstFrame = animations[TORSO_STAND2].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND2].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND2].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND2].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND2].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_JUMP3 ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_FALL ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_FALL2 ) {
+				animations[i].firstFrame = animations[TORSO_STAND2].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND2].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND2].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND2].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND2].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_FALL3 ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_TALK ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+		
 			break;
 		}
 		animations[i].firstFrame = atoi( token );
@@ -530,6 +642,12 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	else {
 		headName = headModelName;
 	}
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/lower.mdr", modelName );
+	ci->legsModel = trap_R_RegisterModel( filename );
+	if ( !ci->legsModel ) {
+		Com_sprintf( filename, sizeof( filename ), "models/players/characters/%s/lower.mdr", modelName );
+		ci->legsModel = trap_R_RegisterModel( filename );
+		if ( !ci->legsModel ) {
 	Com_sprintf( filename, sizeof( filename ), "models/players/%s/lower.md3", modelName );
 	ci->legsModel = trap_R_RegisterModel( filename );
 	if ( !ci->legsModel ) {
@@ -540,7 +658,15 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 			return qfalse;
 		}
 	}
+		}
+	}
 
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/upper.mdr", modelName );
+	ci->torsoModel = trap_R_RegisterModel( filename );
+	if ( !ci->torsoModel ) {
+		Com_sprintf( filename, sizeof( filename ), "models/players/characters/%s/upper.mdr", modelName );
+		ci->torsoModel = trap_R_RegisterModel( filename );
+		if ( !ci->torsoModel ) {
 	Com_sprintf( filename, sizeof( filename ), "models/players/%s/upper.md3", modelName );
 	ci->torsoModel = trap_R_RegisterModel( filename );
 	if ( !ci->torsoModel ) {
@@ -551,7 +677,22 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 			return qfalse;
 		}
 	}
+		}
+	}
 
+	if( headName[0] == '*' ) {
+		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.mdr", &headModelName[1], &headModelName[1] );
+	}
+	else {
+		Com_sprintf( filename, sizeof( filename ), "models/players/%s/head.mdr", headName );
+	}
+	ci->headModel = trap_R_RegisterModel( filename );
+	// if the head model could not be found and we didn't load from the heads folder try to load from there
+	if ( !ci->headModel && headName[0] != '*' ) {
+		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.mdr", headModelName, headModelName );
+		ci->headModel = trap_R_RegisterModel( filename );
+	}
+	if ( !ci->headModel ) {
 	if( headName[0] == '*' ) {
 		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.md3", &headModelName[1], &headModelName[1] );
 	}
@@ -567,6 +708,7 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	if ( !ci->headModel ) {
 		Com_Printf( "Failed to load model file %s\n", filename );
 		return qfalse;
+	}
 	}
 
 	// if any skins failed to load, return failure
@@ -1385,6 +1527,18 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	VectorClear( legsAngles );
 	VectorClear( torsoAngles );
 
+	// leilei -- new third person camera prep
+	cent->newcamrunning = 0;
+	if (cg_cameramode.integer == 1)
+	{
+	if ((cent->currentState.torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_ATTACK) 
+	cent->newcamrunning = 1;
+	else
+	cent->newcamrunning = 0;
+
+
+	}
+
 	// --------- yaw -------------
 
 	// allow yaw to drift a bit
@@ -1397,6 +1551,39 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 		cent->pe.legs.yawing = qtrue;	// always center
 	}
 
+
+	// etc
+
+	if(cent->newcamrunning){
+	// lean towards the direction of travel
+		VectorCopy( cent->currentState.pos.trDelta, velocity );
+		speed = VectorNormalize( velocity );
+		if ( speed ) {
+			vec3_t	axis[3];
+			vec3_t	veel;
+			vec3_t fwad, rait;			
+			float	side, frt, rrt;
+			AngleVectors(veel, velocity, fwad, rait);
+	
+			speed *= 0.05f;
+	
+		//	AnglesToAxis( legsAngles, axis );
+		//	side = speed * DotProduct( velocity, axis[1] );
+		//	headAngles[YAW] = velocity[YAW] * cg_leiDebug.value;
+	
+		//	side = speed * DotProduct( velocity, axis[0] );
+			//headAngles[YAW] += side;
+		}
+
+
+
+
+
+
+
+
+	}
+
 	// adjust legs for movement dir
 	if ( cent->currentState.eFlags & EF_DEAD ) {
 		// don't let dead bodies twitch
@@ -1407,12 +1594,27 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 			CG_Error( "Bad player movement angle" );
 		}
 	}
+	if(cent->newcamrunning){
+
+	//headAngles[YAW] = cent->pe.legs.yawAngle + movementOffsets[ dir ];
+	}
+
 	legsAngles[YAW] = headAngles[YAW] + movementOffsets[ dir ];
 	torsoAngles[YAW] = headAngles[YAW] + 0.25 * movementOffsets[ dir ];
+	
 
 	// torso
+	if (cg_cameramode.integer == 1)
+	{
+	CG_SwingAngles( torsoAngles[YAW], 180, 90, cg_swingSpeed.value, &cent->pe.torso.yawAngle, &cent->pe.torso.yawing );
+	CG_SwingAngles( legsAngles[YAW], 180, 90, cg_swingSpeed.value, &cent->pe.legs.yawAngle, &cent->pe.legs.yawing );
+
+	}
+	else
+	{
 	CG_SwingAngles( torsoAngles[YAW], 25, 90, cg_swingSpeed.value, &cent->pe.torso.yawAngle, &cent->pe.torso.yawing );
 	CG_SwingAngles( legsAngles[YAW], 40, 90, cg_swingSpeed.value, &cent->pe.legs.yawAngle, &cent->pe.legs.yawing );
+	}
 
 	torsoAngles[YAW] = cent->pe.torso.yawAngle;
 	legsAngles[YAW] = cent->pe.legs.yawAngle;
@@ -1426,8 +1628,21 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	} else {
 		dest = headAngles[PITCH] * 0.75f;
 	}
+	if (cg_cameramode.integer == 1)
+	{
 	CG_SwingAngles( dest, 15, 30, 0.1f, &cent->pe.torso.pitchAngle, &cent->pe.torso.pitching );
+
+	headAngles[PITCH] = cent->pe.torso.pitchAngle;
+	//headAngles[YAW] = cent->pe.torso.yawAngle;
+	headAngles[YAW] = torsoAngles[YAW] + 0.25 * movementOffsets[ dir ];
 	torsoAngles[PITCH] = cent->pe.torso.pitchAngle;
+	}
+	else
+	{
+	CG_SwingAngles( dest, 15, 30, 0.1f, &cent->pe.torso.pitchAngle, &cent->pe.torso.pitching );
+	
+	torsoAngles[PITCH] = cent->pe.torso.pitchAngle;
+	}
 
 	//
 	clientNum = cent->currentState.clientNum;
@@ -1437,6 +1652,8 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 			torsoAngles[PITCH] = 0.0f;
 		}
 	}
+
+
 
 	// --------- roll -------------
 
@@ -2580,6 +2797,12 @@ void CG_Player( centity_t *cent ) {
 
 	// add powerups floating behind the player
 	CG_PlayerPowerups( cent, &torso );
+
+	// Chibi this crap
+
+	//VectorScale( head.axis[0], 3.17, head.axis[0] );
+	//VectorScale( head.axis[1], 3.17, head.axis[1] );
+	//VectorScale( head.axis[2], 3.17, head.axis[2] );
 }
 
 

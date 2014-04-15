@@ -229,17 +229,80 @@ static void CG_OffsetThirdPersonView( void ) {
 	float		focusDist;
 	float		forwardScale, sideScale;
 
+
+	float		range = cg_thirdPersonRange.value;
+
+		
 	cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
 
 	VectorCopy( cg.refdefViewAngles, focusAngles );
 
 	// if dead, look at killer
 	if ( (cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) && 
-				(cgs.gametype !=GT_ELIMINATION && cgs.gametype !=GT_CTF_ELIMINATION && cgs.gametype !=GT_LMS) ) {
+				(cgs.gametype !=GT_ELIMINATION && cgs.gametype !=GT_CTF_ELIMINATION && cgs.gametype !=GT_LMS)) {
 		focusAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
 		cg.refdefViewAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
 	}
 
+	if (cg_deathcam.integer == 2 && (cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) ){	// leilei - deathcam
+
+		range = 100;
+		//origin = cg.refdef.vieworg;
+	//	focusAngles[YAW] = cg.refdefViewAngles[YAW];
+	//	focusAngles[PITCH] = cg.refdefViewAngles[PITCH];
+	}
+
+	if (cg_cameramode.integer && (cg.predictedPlayerState.stats[STAT_HEALTH] > 0))		// leilei this mode is off to the player's right
+	{
+	//if ( focusAngles[PITCH] > 33 ) {
+	//	focusAngles[PITCH] = 33;		// don't go too far overhead
+	//}
+
+//	 if ( focusAngles[PITCH] < -45 ) {
+	//	focusAngles[PITCH] = -45;		// don't go too far overhead
+//	}
+	AngleVectors( focusAngles, forward, NULL, NULL );
+
+	VectorMA( cg.refdef.vieworg, FOCUS_DISTANCE, forward, focusPoint );
+
+	VectorCopy( cg.refdef.vieworg, view );
+
+
+	view[2] += 3;
+
+	cg.refdefViewAngles[PITCH] *= 0.5;
+
+	AngleVectors( cg.refdefViewAngles, forward, right, up );
+
+	forwardScale = cos( 0 / 180 * M_PI );
+	sideScale = sin( 0 / 180 * M_PI ) - 0.465;
+	VectorMA( view, -range * forwardScale, forward, view );
+	VectorMA( view, -range * sideScale, right, view );
+
+	VectorCopy( view, cg.refdef.vieworg );
+
+	// select pitch to look at focus point from vieword
+	VectorSubtract( focusPoint, cg.refdef.vieworg, focusPoint );
+	focusDist = sqrt( focusPoint[0] * focusPoint[0] + focusPoint[1] * focusPoint[1] );
+	if ( focusDist < 1 ) {
+		focusDist = 1;	// should never happen
+	}
+	cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2( focusPoint[2], focusDist );
+	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
+
+	{
+	vec3_t			forward, up;
+ 
+	cg.refdef.vieworg[2] -= 24;
+	AngleVectors( cg.refdefViewAngles, forward, NULL, up );
+	VectorMA( cg.refdef.vieworg, 1, forward, cg.refdef.vieworg );
+	VectorMA( cg.refdef.vieworg, 24, up, cg.refdef.vieworg );
+	}
+
+
+	}
+	else
+	{
 	if ( focusAngles[PITCH] > 45 ) {
 		focusAngles[PITCH] = 45;		// don't go too far overhead
 	}
@@ -257,12 +320,12 @@ static void CG_OffsetThirdPersonView( void ) {
 
 	forwardScale = cos( cg_thirdPersonAngle.value / 180 * M_PI );
 	sideScale = sin( cg_thirdPersonAngle.value / 180 * M_PI );
-	VectorMA( view, -cg_thirdPersonRange.value * forwardScale, forward, view );
-	VectorMA( view, -cg_thirdPersonRange.value * sideScale, right, view );
+	VectorMA( view, -range * forwardScale, forward, view );
+	VectorMA( view, -range * sideScale, right, view );
 
 	// trace a ray from the origin to the viewpoint to make sure the view isn't
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
-
+/*
 	if (!cg_cameraMode.integer) {
 		CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID );
 
@@ -276,6 +339,7 @@ static void CG_OffsetThirdPersonView( void ) {
 			VectorCopy( trace.endpos, view );
 		}
 	}
+*/
 
 
 	VectorCopy( view, cg.refdef.vieworg );
@@ -288,6 +352,7 @@ static void CG_OffsetThirdPersonView( void ) {
 	}
 	cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2( focusPoint[2], focusDist );
 	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
+	}
 }
 
 
@@ -533,6 +598,13 @@ static int CG_CalcFov( void ) {
 		}
 	}
 
+	if (cg_cameramode.integer == 1 && cg_thirdPerson.integer){
+	// fov scaling for the modern third person view
+
+		fov_x = fov_x * 0.93 * (cg.xyspeed * (0.0006) + 1);
+
+	}
+
 	x = cg.refdef.width / tan( fov_x / 360 * M_PI );
 	fov_y = atan2( cg.refdef.height, x );
 	fov_y = fov_y * 360 / M_PI;
@@ -581,9 +653,9 @@ static void CG_DamageBlendBlob( void ) {
 		return;
 	}
 
-	//if (cg.cameraMode) {
-	//	return;
-	//}
+	if (cg.cameraMode) {
+		return;
+	}
 
 	// ragePro systems can't fade blends, so don't obscure the screen
 	if ( cgs.glconfig.hardwareType == GLHW_RAGEPRO ) {
@@ -635,20 +707,7 @@ static int CG_CalcViewValues( void ) {
 	CG_CalcVrect();
 
 	ps = &cg.predictedPlayerState;
-/*
-	if (cg.cameraMode) {
-		vec3_t origin, angles;
-		if (trap_getCameraInfo(cg.time, &origin, &angles)) {
-			VectorCopy(origin, cg.refdef.vieworg);
-			angles[ROLL] = 0;
-			VectorCopy(angles, cg.refdefViewAngles);
-			AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
-			return CG_CalcFov();
-		} else {
-			cg.cameraMode = qfalse;
-		}
-	}
-*/
+
 	// intermission view
 	if ( ps->pm_type == PM_INTERMISSION ) {
 		VectorCopy( ps->origin, cg.refdef.vieworg );
@@ -659,6 +718,9 @@ static int CG_CalcViewValues( void ) {
 
 	cg.bobcycle = ( ps->bobCycle & 128 ) >> 7;
 	cg.bobfracsin = fabs( sin( ( ps->bobCycle & 127 ) / 127.0 * M_PI ) );
+
+	cg.bobfraccos = fabs( cos( ( ps->bobCycle & 127 ) / 127.0 * M_PI ) );
+	cg.bobfracsin2 = fabs( sin( ( ps->bobCycle & 127) / 127.0 * (M_PI) ));
 
 	cg.xyspeed = sqrt( ps->velocity[0] * ps->velocity[0] +
 		ps->velocity[1] * ps->velocity[1] );
@@ -814,6 +876,10 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	CG_PredictPlayerState();
 
 	// decide on third person view
+
+	if (!cg_deathcam.integer)				// leilei - allow first person deathcam
+	cg.renderingThirdPerson = cg_thirdPerson.integer;
+	else
 	cg.renderingThirdPerson = cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0);
 
 	// build cg.refdef

@@ -553,6 +553,20 @@ typedef enum {
 	TORSO_AFFIRMATIVE,
 	TORSO_NEGATIVE,
 
+	TORSO_RUN, 	// run with gun
+	TORSO_RUN2, 	// run with gauntlet
+	TORSO_RUN3, 	// run with flag in left hand, gun in right
+	TORSO_STAND3, 	// stand /w flag in left hand (if has flag)
+	TORSO_JUMP, 	// jump with gun
+	TORSO_JUMP2, 	// jump with gauntlet
+	TORSO_JUMP3, 	// jump with flag
+	TORSO_FALL, 	// fall with gun
+	TORSO_FALL2, 	// fall with gauntlet
+	TORSO_FALL3, 	// fall with flag
+	TORSO_TALK, 	// fall with flag
+//	TORSO_AIMUP, 	// aiming upward
+//	TORSO_AIMDOWN, 	// aiming downward
+
 //	BOTH_POSE,		// leilei - crappy ui posing code trying
 
 	MAX_ANIMATIONS,

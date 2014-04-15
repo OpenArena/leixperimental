@@ -219,8 +219,10 @@ void CG_RailTrail (clientInfo_t *ci, vec3_t start, vec3_t end) {
 	float  len;
 	int    i, j, skip;
  
-	localEntity_t *le;
+	localEntity_t *le; 
 	refEntity_t   *re;
+
+
  
 #define RADIUS   4
 #define ROTATION 1
@@ -260,6 +262,49 @@ void CG_RailTrail (clientInfo_t *ci, vec3_t start, vec3_t end) {
 		// nudge down a bit so it isn't exactly in center
 		re->origin[2] -= 8;
 		re->oldorigin[2] -= 8;
+
+		// leilei - reimplementing the rail discs that were removed in 1.30
+		if (cg_oldRail.integer > 1){
+
+		le = CG_AllocLocalEntity();
+		re = &le->refEntity;
+
+		VectorCopy(start, re->origin);
+		VectorCopy(end, re->oldorigin);
+		le->leType = LE_FADE_RGB;
+		le->startTime = cg.time;
+		le->endTime = cg.time + cg_railTrailTime.value;
+		le->lifeRate = 1.0 / (le->endTime - le->startTime);
+	 
+		re->shaderTime = cg.time / 1000.0f;
+		re->reType = RT_RAIL_RINGS;
+		re->customShader = cgs.media.railRingsShader;
+		re->shaderRGBA[0] = ci->color1[0] * 255;
+		re->shaderRGBA[1] = ci->color1[1] * 255;
+		re->shaderRGBA[2] = ci->color1[2] * 255;
+		re->shaderRGBA[3] = 255;
+	
+		le->color[0] = ci->color1[0] * 0.75;
+		le->color[1] = ci->color1[1] * 0.75;
+		le->color[2] = ci->color1[2] * 0.75;
+		le->color[3] = 1.0f;	
+
+		re->origin[2] -= 8;
+		re->oldorigin[2] -= 8;
+
+		if (cg_oldRail.integer > 2){		// use the secondary color instead
+			re->shaderRGBA[0] = ci->color2[0] * 255;
+			re->shaderRGBA[1] = ci->color2[1] * 255;
+			re->shaderRGBA[2] = ci->color2[2] * 255;
+			re->shaderRGBA[3] = 255;
+		
+			le->color[0] = ci->color2[0] * 0.75;
+			le->color[1] = ci->color2[1] * 0.75;
+			le->color[2] = ci->color2[2] * 0.75;
+			le->color[3] = 1.0f;	
+			}
+
+		}
 		return;
 	}
 
@@ -851,6 +896,9 @@ void CG_RegisterWeapon( int weaponNum ) {
 
 		weaponInfo->flashSound[0] = trap_S_RegisterSound( "sound/weapons/lightning/lg_fire.wav", qfalse );
 		cgs.media.lightningShader = trap_R_RegisterShader( "lightningBoltNew");
+		cgs.media.llightninghalo = trap_R_RegisterShader( "leilightninghalo");	// leilei
+		cgs.media.llightningsubbeam = trap_R_RegisterShader( "leilightningsubbeam");	// leilei
+		cgs.media.llightningbeam = trap_R_RegisterShader( "leilightningbeam");	// leilei
 		cgs.media.lightningExplosionModel = trap_R_RegisterModel( "models/weaphits/crackle.md3" );
 		cgs.media.sfx_lghit1 = trap_S_RegisterSound( "sound/weapons/lightning/lg_hit.wav", qfalse );
 		cgs.media.sfx_lghit2 = trap_S_RegisterSound( "sound/weapons/lightning/lg_hit2.wav", qfalse );
@@ -1069,12 +1117,59 @@ static int CG_MapTorsoToWeaponFrame( clientInfo_t *ci, int frame ) {
 	return 0;
 }
 
+// Stuff from Darkplaces
+#define bound(min,num,max) (num >= min ? (num < max ? num : max) : min)
+static vec_t lowpass(vec_t value, vec_t frac, vec_t *store)
+{
+	frac = bound(0, frac, 1);
+	return (*store = *store * (1 - frac) + value * frac);
+}
 
+static vec_t lowpass_limited(vec_t value, vec_t frac, vec_t limit, vec_t *store)
+{
+	lowpass(value, frac, store);
+	return (*store = bound(value - limit, *store, value + limit));
+}
+
+static vec_t highpass(vec_t value, vec_t frac, vec_t *store)
+{
+	return value - lowpass(value, frac, store);
+}
+
+static vec_t highpass_limited(vec_t value, vec_t frac, vec_t limit, vec_t *store)
+{
+	return value - lowpass_limited(value, frac, limit, store);
+}
+
+static void lowpass3(vec3_t value, vec_t fracx, vec_t fracy, vec_t fracz, vec3_t store, vec3_t out)
+{
+	out[0] = lowpass(value[0], fracx, &store[0]);
+	out[1] = lowpass(value[1], fracy, &store[1]);
+	out[2] = lowpass(value[2], fracz, &store[2]);
+}
+
+static void highpass3(vec3_t value, vec_t fracx, vec_t fracy, vec_t fracz, vec3_t store, vec3_t out)
+{
+	out[0] = highpass(value[0], fracx, &store[0]);
+	out[1] = highpass(value[1], fracy, &store[1]);
+	out[2] = highpass(value[2], fracz, &store[2]);
+}
+
+static void highpass3_limited(vec3_t value, vec_t fracx, vec_t limitx, vec_t fracy, vec_t limity, vec_t fracz, vec_t limitz, vec3_t store, vec3_t out)
+{
+	out[0] = highpass_limited(value[0], fracx, limitx, &store[0]);
+	out[1] = highpass_limited(value[1], fracy, limity, &store[1]);
+	out[2] = highpass_limited(value[2], fracz, limitz, &store[2]);
+}
+
+//end stuff from Darkplaces
 /*
 ==============
 CG_CalculateWeaponPosition
 ==============
 */
+vec3_t	gunorg_prev;
+
 static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	float	scale;
 	int		delta;
@@ -1082,6 +1177,8 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 
 	VectorCopy( cg.refdef.vieworg, origin );
 	VectorCopy( cg.refdefViewAngles, angles );
+
+	VectorCopy( cg.refdef.vieworg, gunorg_prev );
 
 	// on odd legs, invert some angles
 	if ( cg.bobcycle & 1 ) {
@@ -1091,9 +1188,56 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	}
 
 	// gun angles from bobbing
-	angles[ROLL] += scale * cg.bobfracsin * 0.005;
-	angles[YAW] += scale * cg.bobfracsin * 0.01;
-	angles[PITCH] += cg.xyspeed * cg.bobfracsin * 0.005;
+
+
+
+	// Engoo bobbing port
+	if (cg_bobmodel.integer)
+	{
+		vec3_t		forward, right, up;
+		float		bob;
+		float 		s =  cg.time * scale * 0.001;
+		//float		sinsin;
+	
+		//sinsin = fabs( sin( ( ps->bobCycle & 127 ) / 127.0 * M_PI ) );
+		AngleVectors (angles, forward, right, up);
+	
+	
+		// Arc 1
+		if (cg_bobmodel.integer == 1){
+		bob = scale * 2 * 0.05 * cg.bobfracsin * 0.04;
+		VectorMA (origin, bob, right, origin);
+	
+		bob = cos(scale * 0.07 * cg.bobfracsin * 0.05) - cos(scale * 0.07 * cg.bobfracsin * 0.1);
+		VectorMA (origin, bob, up, origin);
+		}
+	
+		// Thrust
+		if (cg_bobmodel.integer == 2){
+	
+		bob = scale * 2 * 0.05 * cg.bobfracsin * 0.04;
+		VectorMA (origin, bob, forward, origin);
+	
+	
+		}
+
+
+		if (cg_bobmodel.integer == 3){
+		bob = scale * 2 * 0.05 * cg.bobfracsin * 0.04;
+		VectorMA (origin, bob, right, origin);
+	
+		bob = cos(scale * 0.07 * cg.bobfraccos * 0.05) - sin(scale * 0.07 * cg.bobfracsin * 0.1);
+		VectorMA (origin, bob, up, origin);
+		}
+
+	}
+	else
+	{
+		angles[ROLL] += scale * cg.bobfracsin * 0.005;
+		angles[YAW] += scale * cg.bobfracsin * 0.01;
+		angles[PITCH] += cg.xyspeed * cg.bobfracsin * 0.005;
+	}
+	
 
 	// drop the weapon when landing
 	delta = cg.time - cg.landTime;
@@ -1115,11 +1259,18 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 #endif
 
 	// idle drift
+	if (!cg_bobmodel.integer){
 	scale = cg.xyspeed + 40;
 	fracsin = sin( cg.time * 0.001 );
 	angles[ROLL] += scale * fracsin * 0.01;
 	angles[YAW] += scale * fracsin * 0.01;
 	angles[PITCH] += scale * fracsin * 0.01;
+	}
+
+
+
+	
+	
 }
 
 
@@ -1134,9 +1285,509 @@ so the endpoint will reflect the simulated strike (lagging the predicted
 angle)
 ===============
 */
+
+/*
+===============
+CG_LightningHalo
+
+a rough glow effect for the lightning beam to give it a more exaggerated feeling
+===============
+*/
+void CG_LightningHalo( vec3_t source, vec3_t dest ) {
+	vec3_t		forward, right;
+	polyVert_t	verts[4];
+	vec3_t		line;
+	float		len, begin, end;
+	vec3_t		start, finish;
+	vec3_t		midpoint;
+	float 		halowidth;
+	vec3_t		colar;
+	// tracer
+	VectorSubtract( dest, source, forward );
+	len = VectorNormalize( forward );
+
+
+	colar[0] = 26;
+	colar[1] = 50;
+	colar[2] = 65;
+
+	halowidth = 20 + crandom() * 6;
+	// start at least a little ways from the muzzle
+	if ( len < 0 ) {
+		return;
+	}
+//	begin = 50 * (len - 60);
+	begin = 0;
+
+	end = len;
+//	if ( end > len ) {
+//		end = len;
+//	}
+	VectorMA( source, begin, forward, start );
+	VectorMA( source, end, forward, finish );
+
+	line[0] = DotProduct( forward, cg.refdef.viewaxis[1] );
+	line[1] = DotProduct( forward, cg.refdef.viewaxis[2] );
+
+	VectorScale( cg.refdef.viewaxis[1], line[1], right );
+	VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+	VectorNormalize( right );
+
+	VectorMA( finish, halowidth, right, verts[0].xyz );
+	verts[0].st[0] = 0;
+	verts[0].st[1] = 0;
+	verts[0].modulate[0] = colar[0];
+	verts[0].modulate[1] = colar[1];
+	verts[0].modulate[2] = colar[2];
+	verts[0].modulate[3] = 255;
+
+	VectorMA( finish, -halowidth, right, verts[1].xyz );
+	verts[1].st[0] = 0;
+	verts[1].st[1] = 1;
+	verts[1].modulate[0] = colar[0];
+	verts[1].modulate[1] = colar[1];
+	verts[1].modulate[2] = colar[2];
+	verts[1].modulate[3] = 255;
+
+	VectorMA( start, -halowidth, right, verts[2].xyz );
+	verts[2].st[0] = 1;
+	verts[2].st[1] = 1;
+	verts[2].modulate[0] = colar[0];
+	verts[2].modulate[1] = colar[1];
+	verts[2].modulate[2] = colar[2];
+	verts[2].modulate[3] = 255;
+
+	VectorMA( start, halowidth, right, verts[3].xyz );
+	verts[3].st[0] = 1;
+	verts[3].st[1] = 0;
+	verts[3].modulate[0] = colar[0];
+	verts[3].modulate[1] = colar[1];
+	verts[3].modulate[2] = colar[2];
+	verts[3].modulate[3] = 255;
+
+	trap_R_AddPolyToScene( cgs.media.llightninghalo, 4, verts );
+
+}
+
+
+
+
+/*
+===============
+CG_LightningBeam
+
+===============
+*/
+void CG_LightningBeam( vec3_t source, vec3_t dest ) {
+	vec3_t		forward, right;
+	polyVert_t	verts[4];
+	vec3_t		line;
+	float		len, begin, end;
+	vec3_t		start, finish;
+	vec3_t		midpoint;
+	float 		halowidth;
+	vec3_t		colar;
+	// tracer
+	VectorSubtract( dest, source, forward );
+	len = VectorNormalize( forward );
+
+
+	colar[0] = 99;
+	colar[1] = 163;
+	colar[2] = 255;
+
+	halowidth = 2;
+	// start at least a little ways from the muzzle
+	if ( len < 0 ) {
+		return;
+	}
+	begin = 0;
+
+	end = len;
+
+	VectorMA( source, begin, forward, start );
+	VectorMA( source, end, forward, finish );
+
+	line[0] = DotProduct( forward, cg.refdef.viewaxis[1] );
+	line[1] = DotProduct( forward, cg.refdef.viewaxis[2] );
+
+	VectorScale( cg.refdef.viewaxis[1], line[1], right );
+	VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+	VectorNormalize( right );
+
+	VectorMA( finish, halowidth, right, verts[0].xyz );
+	verts[0].st[0] = 0;
+	verts[0].st[1] = 0;
+	verts[0].modulate[0] = colar[0];
+	verts[0].modulate[1] = colar[1];
+	verts[0].modulate[2] = colar[2];
+	verts[0].modulate[3] = 255;
+
+	VectorMA( finish, -halowidth, right, verts[1].xyz );
+	verts[1].st[0] = 0;
+	verts[1].st[1] = 1;
+	verts[1].modulate[0] = colar[0];
+	verts[1].modulate[1] = colar[1];
+	verts[1].modulate[2] = colar[2];
+	verts[1].modulate[3] = 255;
+
+	VectorMA( start, -halowidth, right, verts[2].xyz );
+	verts[2].st[0] = 1;
+	verts[2].st[1] = 1;
+	verts[2].modulate[0] = colar[0];
+	verts[2].modulate[1] = colar[1];
+	verts[2].modulate[2] = colar[2];
+	verts[2].modulate[3] = 255;
+
+	VectorMA( start, halowidth, right, verts[3].xyz );
+	verts[3].st[0] = 1;
+	verts[3].st[1] = 0;
+	verts[3].modulate[0] = colar[0];
+	verts[3].modulate[1] = colar[1];
+	verts[3].modulate[2] = colar[2];
+	verts[3].modulate[3] = 255;
+
+	trap_R_AddPolyToScene( cgs.media.llightningbeam, 4, verts );
+
+}
+
+
+
+/*
+===============
+CG_LightningStatic
+
+smaller randomy zaps to go around a bolt to add
+to the whole lightningy effect. Intended to be inspired by
+many many many many many many big video games from the year
+of 2000.  Popular because it's a way for convincing lightning
+with a much smaller texture cache.
+===============
+*/
+
+
+// Even though this is not good for performance, I want to make these some global so I can
+// mutate them in another function for the sake of timing. I do not like how flickering lightning looks
+// I just want the lightning bolts to slowly animate :D
+
+float		oldrandom1[16];
+float		oldrandom2[16];
+float		oldrandom3[16];
+vec3_t		newrandom;
+
+float		therandom1[16];
+float		therandom2[16];
+float		therandom3[16];
+
+float		literand_finished;
+float		litelerp_finished;
+float		literand_time;
+
+float		newrandom1[16];
+float		newrandom2[16];
+float		newrandom3[16];
+
+// Process some random lightning iterations
+// TODO: Lerp this properly
+void CG_LightningRandom() {
+
+	int it;
+
+
+	if (cg.time > literand_finished){
+	newrandom[0] =  (crandom() * 7);
+	newrandom[1] =  (crandom() * 7);
+	newrandom[2] =  (crandom() * 7);
+
+//	newrandom[0] =  (rand() & 7);
+//	newrandom[1] =  (rand() & 7);
+//	newrandom[2] =  (rand() & 7);
+
+
+	literand_finished = cg.time + 50;
+	}
+
+
+//	oldrandom1[0] = 0;
+//	oldrandom2[0] = 0;
+//	oldrandom3[0] = 0;
+
+	//oldrandom1[15] = 0;
+//	oldrandom2[15] = 0;
+//	oldrandom3[15] = 0;
+	if (cg.time > litelerp_finished){
+	for(it=0;it<16;it++){
+
+
+	// lerp the old value	
+//
+	//	oldrandom1[it] = oldrandom1[it-1] + oldrandom1[it] + therandom1[it] * 0.33;
+	//	oldrandom2[it] = oldrandom2[it-1] + oldrandom2[it] + therandom2[it] * 0.33;
+	//	oldrandom3[it] = oldrandom3[it-1] + oldrandom3[it] + therandom3[it] * 0.33;
+
+		oldrandom1[it] = therandom1[it] * 0.35;
+		oldrandom2[it] = therandom2[it] * 0.35;
+		oldrandom3[it] = therandom3[it] * 0.35;
+
+	// make a new value
+
+		therandom1[it] = oldrandom1[it] + newrandom[0] * 0.5;
+		therandom2[it] = oldrandom2[it] + newrandom[1] * 0.5;
+		therandom3[it] = oldrandom3[it] + newrandom[2] * 0.5;
+
+	//	therandom1[it] = therandom1[it] + newrandom[0] * 0.5;
+	//	therandom2[it] = therandom2[it] + newrandom[1] * 0.5;
+	//	therandom3[it] = therandom3[it] + newrandom[2] * 0.5;
+	
+
+
+
+	//	therandom1[it] = crandom() * 3;
+	//	therandom2[it] = crandom() * 3;
+	//	therandom3[it] = crandom() * 3;
+
+	// scroll
+
+	//	therandom1[it+1] = therandom1[it];
+	//	therandom2[it+1] = therandom2[it];
+	//	therandom3[it+1] = therandom3[it];
+
+		}
+	litelerp_finished = cg.time;
+	}
+
+	// scrolling
+	for(it=1;it<15;it++){
+
+		oldrandom1[it] = oldrandom1[it+1];
+		oldrandom2[it] = oldrandom2[it+1];
+		oldrandom3[it] = oldrandom3[it+1];
+
+	//	therandom1[it] = therandom1[it+1];
+	//	therandom2[it] = therandom2[it+1];
+	//	therandom3[it] = therandom3[it+1];
+
+	}
+
+}
+
+// Fetch from our random lightning iterations
+void CG_LightningRandFetch(int offs) {
+
+	int it;
+
+	for(it=1;it<15;it++){
+
+		newrandom1[it] = therandom1[it + offs];
+		newrandom2[it] = therandom2[it + offs];
+		newrandom3[it] = therandom3[it + offs];
+
+
+		}
+
+}
+
+void CG_LightningStatic( vec3_t source, vec3_t dest, int loose ) {
+	vec3_t		forward, right, up;
+	polyVert_t	verts[4];
+	vec3_t		line;
+	float		len, begin, end;
+	float		belen, beakin, bend, beggin, drifty;
+	vec3_t		start, finish;
+	vec3_t		fart, inish, dinish;
+	vec3_t		midpoint;
+	float 		halowidth;
+	vec3_t		colar;
+	int		stahp, it;
+	float		plz, ok;
+	vec3_t		randy;
+	vec3_t		oldvert, oldvert2, oldvert3, oldvert4;
+	polyVert_t	oldverts[4];
+	float		faed, faed2;
+	float		randam;
+
+	float		plzstop;
+	// tracer
+	VectorSubtract( dest, source, forward );
+	len = VectorNormalize( forward );
+
+	stahp =	16;
+	colar[0] = 96;
+	colar[1] = 170;
+	colar[2] = 255;
+
+	halowidth = 3;
+	// start at least a little ways from the muzzle
+	if ( len < 0 ) {
+		return;
+	}
+
+
+	beakin = 0;
+
+	bend = len;
+
+	for(it=1;it<stahp;it++){
+
+	if (it < 2){
+
+	begin = 0;
+	faed = 0;
+	faed2 = 0.5;
+
+	end = len / (stahp * 2);
+	beggin = end;
+	}
+	else
+	{
+	begin = beggin;
+	end = (len / stahp) * it;
+	beggin = end;
+	}
+	//begin = begin;
+	fart[0] = start[0];
+	fart[1] = start[1];
+	fart[2] = start[2];
+
+	drifty = randy[2];
+
+
+
+	faed = it - 4 * 0.3;
+	faed2 = it - 3 * 0.3;
+
+	if (faed > 1)
+		faed = 1;
+	if (faed2 > 1)
+		faed2 = 1;
+
+	if (faed < 0)
+		faed = 0;
+	if (faed2 < 0)
+		faed2 = 0;
+
+
+	inish[0] = finish[0];
+	inish[1] = finish[1];
+	inish[2] = finish[2];
+
+
+	VectorMA( source, begin, forward, fart );
+	VectorMA( source, end, forward, inish );
+
+	if (it>1){
+	fart[0] = dinish[0];
+	fart[1] = dinish[1];
+	fart[2] = dinish[2];
+
+	}
+
+	oldrandom1[0] = 0;
+	oldrandom2[0] = 0;
+	oldrandom3[0] = 0;
+
+	randam = len * 0.02;
+
+
+
+	if (it>1){
+	int e;
+
+	if (it == 15)
+	plzstop = 0;
+	else if (it == 14)
+	plzstop = 0.2;
+	else if (it == 13)
+	plzstop = 0.7;
+	else if (it == 12)
+	plzstop = 0.8;
+	else if (it == 0)
+	plzstop = 0;
+	else if (it == 1)
+	plzstop = 0.3;
+	else if (it == 2)
+	plzstop = 0.7;
+	else
+	plzstop = 1;
+
+	inish[0] += (oldrandom1[it-1] + newrandom1[it] * 0.5) * plzstop;
+	inish[1] += (oldrandom2[it-1] + newrandom2[it] * 0.5) * plzstop;
+	inish[2] += (oldrandom3[it-1] + newrandom3[it] * 0.5) * plzstop;
+
+	oldrandom1[it] = oldrandom1[it-1] + newrandom1[it] * 0.5;
+	oldrandom2[it] = oldrandom2[it-1] + newrandom2[it] * 0.5;
+	oldrandom3[it] = oldrandom3[it-1] + newrandom3[it] * 0.5;
+	}
+
+	dinish[0] = inish[0];
+	dinish[1] = inish[1];
+	dinish[2] = inish[2];
+
+	line[0] = DotProduct( forward, cg.refdef.viewaxis[1] );
+	line[1] = DotProduct( forward, cg.refdef.viewaxis[2] );
+
+	VectorScale( cg.refdef.viewaxis[1], line[1], right );
+	VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+
+	VectorNormalize( right );
+
+	VectorMA( inish, halowidth, right, verts[0].xyz );
+
+	verts[0].st[0] = it;
+
+	verts[0].st[1] = 0;
+	verts[0].modulate[0] = colar[0] * faed;
+	verts[0].modulate[1] = colar[1] * faed;
+	verts[0].modulate[2] = colar[2] * faed;
+	verts[0].modulate[3] = 255;
+
+	VectorMA( inish, -halowidth, right, verts[1].xyz );
+	verts[1].st[0] = it;
+	verts[1].st[1] = 1;
+	verts[1].modulate[0] = colar[0] * faed;
+	verts[1].modulate[1] = colar[1] * faed;
+	verts[1].modulate[2] = colar[2] * faed;
+	verts[1].modulate[3] = 255;
+	
+	VectorMA( fart, -halowidth, right, verts[2].xyz );
+	verts[2].st[0] = it - 1;
+	verts[2].st[1] = 1;
+	verts[2].modulate[0] = colar[0]  * faed2;
+	verts[2].modulate[1] = colar[1]  * faed2;
+	verts[2].modulate[2] = colar[2]  * faed2;
+	verts[2].modulate[3] = 255;
+
+	VectorMA( fart, halowidth, right, verts[3].xyz );
+
+	verts[3].st[0] = it - 1;
+	verts[3].st[1] = 0;
+	verts[3].modulate[0] = colar[0] * faed2;
+	verts[3].modulate[1] = colar[1] * faed2;
+	verts[3].modulate[2] = colar[2] * faed2;
+	verts[3].modulate[3] = 255;
+	
+	oldverts[0] = verts[0];
+	oldverts[1] = verts[1];
+	oldverts[2] = verts[2];
+	oldverts[3] = verts[3];
+
+	
+	trap_R_AddPolyToScene( cgs.media.llightningsubbeam, 4, verts );
+
+
+	//verts[0].st[0] = (stahp / it) * 0.15;
+	//verts[3].st[0] = 1 - (stahp / it) * 0.15;
+
+	}
+
+
+}
+
+
 static void CG_LightningBolt( centity_t *cent, vec3_t origin ) {
 	trace_t  trace;
 	refEntity_t  beam;
+	refEntity_t  halo;				// leilei - cg_leiEnhancement 2
 	vec3_t   forward;
 	vec3_t   muzzlePoint, endPoint;
 
@@ -1145,6 +1796,9 @@ static void CG_LightningBolt( centity_t *cent, vec3_t origin ) {
 	}
 
 	memset( &beam, 0, sizeof( beam ) );
+
+	if (cg_leiEnhancement.integer > 1)
+	memset( &halo, 0, sizeof( halo ) );
 
 //unlagged - attack prediction #1
 	// if the entity is us, unlagged is on server-side, and we've got it on for the lightning gun
@@ -1218,9 +1872,37 @@ static void CG_LightningBolt( centity_t *cent, vec3_t origin ) {
 	// different than the muzzle origin
 	VectorCopy( origin, beam.origin );
 
+
+
 	beam.reType = RT_LIGHTNING;
 	beam.customShader = cgs.media.lightningShader;
+	if (cg_leiEnhancement.integer < 1) 
 	trap_R_AddRefEntityToScene( &beam );
+
+	// leilei - Nice new super beam effect!
+	if (cg_leiEnhancement.integer > 1) 
+	{
+		int eth, ath, e;
+		float	len;
+		vec3_t forward;
+		vec3_t	wee, woo, wah;
+
+		// 1 main bolt and its halo
+		CG_LightningHalo(beam.origin, beam.oldorigin);
+		CG_LightningBeam(beam.origin, beam.oldorigin);
+
+		// 3 random subbolts	
+		CG_LightningRandom();
+		CG_LightningRandFetch(0);
+		CG_LightningStatic(beam.origin, beam.oldorigin, 0);
+		CG_LightningRandFetch(8);
+		CG_LightningStatic(beam.origin, beam.oldorigin, 0);
+		CG_LightningRandFetch(12);
+		CG_LightningStatic(beam.origin, beam.oldorigin, 0);
+
+
+
+	}
 
 	// add the impact flare if it hit something
 	if ( trace.fraction < 1.0 ) {
@@ -1244,6 +1926,9 @@ static void CG_LightningBolt( centity_t *cent, vec3_t origin ) {
 	}
 }
 /*
+
+
+
 
 static void CG_LightningBolt( centity_t *cent, vec3_t origin ) {
 	trace_t		trace;
@@ -1577,6 +2262,12 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 	vec3_t		angles;
 	weaponInfo_t	*weapon;
 
+	// leilei test
+
+	//refEntity_t	torso;
+	//centity_t	*centorso;
+
+	//ci->headModel
 	if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 		return;
 	}
@@ -2872,7 +3563,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorMA( origin, -5, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 		CG_ParticleExplosion( "explode1", sprOrg, sprVel, 110, 72, 28 );
-		mod = 0; // turns off the sprite (unfortunately, disables dlight)
+		mod = 1; // turns off the sprite (unfortunately, disables dlight)
 		}
 		// LEILEI END enhancement
 
@@ -2908,7 +3599,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorMA( origin, -5, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 		CG_ParticleExplosion( "explode1", sprOrg, sprVel, 110, 72, 28 );
-		mod = 0; // turns off the sprite (unfortunately, disables dlight)
+		mod = 1; // turns off the sprite (unfortunately, disables dlight)
 		}
 		// LEILEI END enhancement
 		break;
@@ -2953,7 +3644,10 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorMA( origin, -5, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 		CG_ParticleExplosion( "explode1", sprOrg, sprVel, 110, 72, 28 );
-		mod = 0; // turns off the sprite (unfortunately, disables dlight)
+		//mod = 1; // turns off the sprite (unfortunately, disables dlight)
+		CG_LeiSparks(sprOrg, dir, 2400, 0, 0, 2);
+		CG_LeiSparks(sprOrg, dir, 2400, 0, 0, 2);
+		CG_LeiSparks(sprOrg, dir, 2400, 0, 0, 1);
 		}
 		// LEILEI END enhancement
 		break;
@@ -2963,6 +3657,14 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		sfx = cgs.media.sfx_plasmaexp;
 		mark = cgs.media.energyMarkShader;
 		radius = 24;
+		if (cg_leiEnhancement.integer > 1) {	// leilei - extra dlight
+		lightColor[0] = 0.8;
+		lightColor[1] = 0.9;
+		lightColor[2] = 1.0;
+		radius = 1;
+		light = 60;
+	
+		}
 		break;
 	case WP_PLASMAGUN:
 		mod = cgs.media.ringFlashModel;
@@ -2970,6 +3672,14 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		sfx = cgs.media.sfx_plasmaexp;
 		mark = cgs.media.energyMarkShader;
 		radius = 16;
+		if (cg_leiEnhancement.integer > 1) {	// leilei - extra dlight
+		lightColor[0] = 0.3;
+		lightColor[1] = 0.4;
+		lightColor[2] = 1.0;
+		light = 80;
+	
+		}
+
 		break;
 	case WP_BFG:
 		mod = cgs.media.dishFlashModel;
@@ -2978,6 +3688,14 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		mark = cgs.media.burnMarkShader;
 		radius = 32;
 		isSprite = qtrue;
+
+		if (cg_leiEnhancement.integer > 1) {	// leilei - extra dlight
+		lightColor[0] = 0.4;
+		lightColor[1] = 1.0;
+		lightColor[2] = 0.5;
+		light = 470;
+	
+		}
 		break;
 	case WP_SHOTGUN:
 		mod = cgs.media.bulletFlashModel;
@@ -3001,6 +3719,13 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				}       }
 			}
 #endif
+		if (cg_leiEnhancement.integer > 1) {	// leilei - extra dlight
+		lightColor[0] = 0.3;
+		lightColor[1] = 0.2;
+		lightColor[2] = 0.1;
+		light = 66;
+		duration = 120;	// bit more instant
+		}
 		sfx = 0;
 		radius = 4;
 		break;
@@ -3046,6 +3771,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		}
 
 		radius = 8;
+
 		break;
 //#endif
 
@@ -3085,6 +3811,13 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		}
 
 		radius = 8;
+		if (cg_leiEnhancement.integer > 1) {	// leilei - extra dlight
+		lightColor[0] = 0.3;
+		lightColor[1] = 0.2;
+		lightColor[2] = 0.1;
+		light = 76;
+		duration = 120;	// bit more instant
+		}
 		break;
 	}
 
@@ -3257,9 +3990,9 @@ static void CG_ShotgunPellet( vec3_t start, vec3_t end, int skipNum ) {
 					kapow[0] = kapow[0] * (crandom() * 65 + 37);
 					kapow[1] = kapow[1] * (crandom() * 65 + 37);
 					kapow[2] = kapow[2] * (crandom() * 65 + 37);
-					CG_LeiSparks(tr.endpos, tr.plane.normal, 800, 0, 0, 7);
-					CG_LeiSparks(tr.endpos, tr.plane.normal, 800, 0, 0, 3);
-					CG_LeiSparks(tr.endpos, tr.plane.normal, 800, 0, 0, 1);
+					CG_LeiSparks(tr.endpos, tr.plane.normal, 400, 0, 0, 7);
+					CG_LeiSparks(tr.endpos, tr.plane.normal, 400, 0, 0, 3);
+					CG_LeiSparks(tr.endpos, tr.plane.normal, 400, 0, 0, 1);
 				
 				}
 // END LEIHANCMENET
@@ -3273,8 +4006,8 @@ static void CG_ShotgunPellet( vec3_t start, vec3_t end, int skipNum ) {
 					kapow[0] = kapow[0] * (crandom() * 65 + 37);
 					kapow[1] = kapow[1] * (crandom() * 65 + 37);
 					kapow[2] = kapow[2] * (crandom() * 65 + 37);
-					CG_LeiSparks(tr.endpos, tr.plane.normal, 800, 0, 0, 7);
-					CG_LeiSparks(tr.endpos, tr.plane.normal, 800, 0, 0, 2);
+					CG_LeiSparks(tr.endpos, tr.plane.normal, 400, 0, 0, 7);
+					CG_LeiSparks(tr.endpos, tr.plane.normal, 400, 0, 0, 2);
 					
 					smoke = CG_SmokePuff( tr.endpos, kapow, 21, 1, 1, 1, 0.9f, 1200, cg.time, 0, 0,  cgs.media.lsmkShader2 );
 					//smoke = CG_SmokePuff( tr.endpos, kapow, 21, 1, 1, 1, 0.9f, 1200, cg.time, 0, 0,  cgs.media.lbumShader1 );
@@ -3351,12 +4084,12 @@ void CG_ShotgunFire( entityState_t *es ) {
 // LEILEI ENHANCEMENT
 				if (cg_leiEnhancement.integer) {
 				// Shotgun puffy
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
-					CG_LeiSparks(v, forward, 1500, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 200, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 200, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 200, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 20, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 20, 0, 0, 7);
+			//		CG_LeiSparks(v, forward, 20, 0, 0, 7);
 				/*	VectorSet( up, 4, 4, 4 );
 					up[0] = up[0] * (crandom() * 22 + 44);	up[1] = up[1] * (crandom() * 22 + 44);	up[2] = up[2] * (crandom() * 22 + 44);
 					CG_SmokePuff( v, up, 14, 1, 1, 1, 0.4f, 900, cg.time, 0, 0,  cgs.media.lsmkShader1 );
@@ -3605,16 +4338,26 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				kapew[0] = kapew[0] * (crandom() * 2 + 37);
 				kapew[1] = kapew[1] * (crandom() * 2 + 37);
 				kapew[2] = kapew[2] * (crandom() * 2 + 37);
+	//	CG_LeiBlood2(end, kapow, 500, 0, 0, 94, 0.6);
+	//	CG_LeiBlood2(end, kapew, 800, 0, 0, 54, 0.5);
+	//	CG_LeiBlood2(end, kapow, 1200, 0, 0, 24, 1);
+	//	CG_LeiBlood2(end, kapow, 1500, 0, 0, 24, 1.2);
+	//	CG_LeiBlood2(end, kapow, 1200, 0, 0, 14, 1.7);
+
+
 
 		CG_SmokePuff( end, kapow, 6, 1, 1, 1, 1.0f, 600, cg.time, 0, 0,  cgs.media.lbldShader1 );
-//		CG_SpurtBlood( end, kapow, 2);
+		CG_SpurtBlood( end, kapow, 2);
 		CG_SpurtBlood( end, kapew, 1);
+
+	//	CG_SpurtBlood2( end, kapew, cg_leiDebug.integer, 1, 400);
+	//	CG_SpurtBlood2( end, kapew, 41, 1, 700);
 		//CG_Particle_Bleed(cgs.media.lbldShader1,kapew,'0 0 0', 0, 100);
 //		CG_Particle_Bleed(cgs.media.lbldShader1,kapew,kapow, 0, 100);
 //		CG_Particle_BloodCloud(self,end,'0 0 0');
 
 if (cg_leiSuperGoreyAwesome.integer) {
-		CG_SpurtBlood( end, kapow, -2);
+		//CG_SpurtBlood( end, kapow, -2);
 			}
 		}
 
@@ -3640,12 +4383,12 @@ if (cg_leiSuperGoreyAwesome.integer) {
 
 
 					smoke = CG_SmokePuff( end, kapow, 14, 1, 1, 1, 1.0f, 600, cg.time, 0, 0,  cgs.media.lsmkShader1 );
-			//		CG_LeiSparks(end, normal, 600, 0, 0, 177);
-			//		CG_LeiSparks(end, normal, 600, 0, 0, 155);
-			//		CG_LeiSparks(end, normal, 600, 0, 0, 444);
-			//		CG_LeiSparks(trace.endpos, trace.plane.normal, 800, 0, 0, 7);
-			//		CG_LeiSparks(trace.endpos, trace.plane.normal, 800, 0, 0, 3);
-			//		CG_LeiSparks(trace.endpos, trace.plane.normal, 800, 0, 0, 1);
+					CG_LeiSparks(end, normal, 200, 0, 0, 177);
+					CG_LeiSparks(end, normal, 200, 0, 0, 155);
+					CG_LeiSparks(end, normal, 200, 0, 0, 444);
+					CG_LeiSparks(trace.endpos, trace.plane.normal, 300, 0, 0, 7);
+					CG_LeiSparks(trace.endpos, trace.plane.normal, 300, 0, 0, 3);
+					CG_LeiSparks(trace.endpos, trace.plane.normal, 300, 0, 0, 1);
 
 				}
 // END LEIHANCMENET

@@ -3548,8 +3548,8 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 
 
 void AdjustFrom640(float *x, float *y, float *w, float *h) {
-	//*x = *x * DC->scale + DC->bias;
-	*x *= DC->xscale;
+	*x = *x * DC->xscale + DC->bias;
+	//*x *= DC->xscale;
 	*y *= DC->yscale;
 	*w *= DC->xscale;
 	*h *= DC->yscale;
@@ -4410,7 +4410,9 @@ qboolean ItemParse_asset_model( itemDef_t *item, int handle ) {
 		return qfalse;
 	}
 	item->asset = DC->registerModel(temp);
-	modelPtr->angle = rand() % 360;
+//	modelPtr->angle = rand() % 360;
+	modelPtr->angle = 0;	// leilei - don't do this because it makes menu changing inconsistent
+
 	return qtrue;
 }
 

@@ -85,13 +85,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TEAM_OVERLAY_MAXNAME_WIDTH	12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH	16
 
-#define	DEFAULT_MODEL			"sarge"
+#define	DEFAULT_MODEL			"sorceress"
 #ifdef MISSIONPACK
-#define	DEFAULT_TEAM_MODEL		"sergei"
-#define	DEFAULT_TEAM_HEAD		"*sergei"
+#define	DEFAULT_TEAM_MODEL		"sorceress"
+#define	DEFAULT_TEAM_HEAD		"*sorceress"
 #else
-#define	DEFAULT_TEAM_MODEL		"sarge"
-#define	DEFAULT_TEAM_HEAD		"sarge"
+#define	DEFAULT_TEAM_MODEL		"sorceress"
+#define	DEFAULT_TEAM_HEAD		"sorceress"
 #endif
 
 #define DEFAULT_REDTEAM_NAME		"Vim supporters"
@@ -199,6 +199,8 @@ typedef struct centity_s {
 	// exact interpolated position of entity on this frame
 	vec3_t			lerpOrigin;
 	vec3_t			lerpAngles;
+
+	int		newcamrunning;	// leilei - determines if we should look in a direction for running
 } centity_t;
 
 
@@ -379,6 +381,7 @@ typedef struct {
 	sfxHandle_t		sounds[MAX_CUSTOM_SOUNDS];
 
 	int		isDead;
+
 } clientInfo_t;
 
 
@@ -654,7 +657,7 @@ typedef struct {
 	float		xyspeed;
 	int     nextOrbitTime;
 
-	//qboolean cameraMode;		// if rendering from a loaded camera
+	qboolean cameraMode;		// if rendering from a loaded camera
 
 
 	// development tool
@@ -674,6 +677,10 @@ typedef struct {
         
         int redObeliskHealth;
         int blueObeliskHealth;
+
+	// leilei
+	float		bobfraccos;
+	float		bobfracsin2;
 } cg_t;
 
 
@@ -799,6 +806,10 @@ typedef struct {
 	qhandle_t	lmarkbullet2;
 	qhandle_t	lmarkbullet3;
 	qhandle_t	lmarkbullet4;
+
+	qhandle_t	llightninghalo;
+	qhandle_t	llightningsubbeam;
+	qhandle_t	llightningbeam;
 
 //#ifdef MISSIONPACK
 	qhandle_t	nailPuffShader;
@@ -1199,6 +1210,7 @@ extern	vmCvar_t		cg_runroll;
 extern	vmCvar_t		cg_bobup;
 extern	vmCvar_t		cg_bobpitch;
 extern	vmCvar_t		cg_bobroll;
+extern	vmCvar_t		cg_bobmodel;	// leilei
 extern	vmCvar_t		cg_swingSpeed;
 extern	vmCvar_t		cg_shadows;
 extern	vmCvar_t		cg_gibs;
@@ -1291,6 +1303,9 @@ extern	vmCvar_t		cg_leiEnhancement;			// LEILEI'S LINE!
 extern	vmCvar_t		cg_leiGoreNoise;			// LEILEI'S LINE!
 extern	vmCvar_t		cg_leiBrassNoise;			// LEILEI'S LINE!
 extern	vmCvar_t		cg_leiSuperGoreyAwesome;	// LEILEI'S LINE!
+extern	vmCvar_t		cg_leiDebug;
+extern	vmCvar_t		cg_deathcam;
+extern	vmCvar_t		cg_cameramode;
 extern	vmCvar_t		cg_oldPlasma;
 extern	vmCvar_t		cg_trueLightning;
 extern	vmCvar_t		cg_music;
@@ -1591,6 +1606,8 @@ void    CG_LeiSparks (vec3_t org, vec3_t vel, int duration, float x, float y, fl
 void    CG_LeiSparks2 (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
 void    CG_LeiPuff (vec3_t org, vec3_t vel, int duration, float x, float y, float speed, float size);
 
+
+//void    CG_LeiTrailer (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
 
 //
 // cg_localents.c
