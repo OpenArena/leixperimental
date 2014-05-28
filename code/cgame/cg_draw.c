@@ -308,6 +308,60 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 	trap_R_RenderScene( &refdef );
 }
 
+
+void CG_Draw3DModelEyes( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles, vec3_t eyep ) {
+	refdef_t		refdef;
+	refEntity_t		ent;
+
+	if ( !cg_draw3dIcons.integer || !cg_drawIcons.integer ) {
+		return;
+	}
+
+	CG_AdjustFrom640( &x, &y, &w, &h );
+
+	memset( &refdef, 0, sizeof( refdef ) );
+
+	memset( &ent, 0, sizeof( ent ) );
+	AnglesToAxis( angles, ent.axis );
+	VectorCopy( origin, ent.origin );
+
+	// leilei - deal with the eyes here
+	VectorCopy( eyep, ent.eyepos );
+
+//	speed *= 0.05f;
+	{
+	vec3_t angers, right, fawed, awp, ah;
+	VectorCopy(angles, angers);
+	angers[0] *= 2;
+	angers[1] *= -2.2;
+	AngleVectors(angers, fawed, right, awp);
+	VectorMA(origin, 1024, fawed, ah );
+	VectorCopy( ah, ent.eyelook );
+	}
+
+	ent.hModel = model;
+	ent.customSkin = skin;
+	ent.renderfx = RF_NOSHADOW;		// no stencil shadows
+
+	refdef.rdflags = RDF_NOWORLDMODEL;
+
+	AxisClear( refdef.viewaxis );
+
+	refdef.fov_x = 30;
+	refdef.fov_y = 30;
+
+	refdef.x = x;
+	refdef.y = y;
+	refdef.width = w;
+	refdef.height = h;
+	
+	refdef.time = cg.time;
+
+	trap_R_ClearScene();
+	trap_R_AddRefEntityToScene( &ent );
+	trap_R_RenderScene( &refdef );
+}
+
 /*
 ================
 CG_DrawHead
@@ -343,8 +397,10 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
 
 		// allow per-model tweaking
 		VectorAdd( origin, ci->headOffset, origin );
+		
+		//CG_Draw3DModel( x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles );
+		CG_Draw3DModelEyes( x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles, ci->eyepos );
 
-		CG_Draw3DModel( x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles );
 	} else if ( cg_drawIcons.integer ) {
 		CG_DrawPic( x, y, w, h, ci->modelIcon );
 	}
@@ -2966,13 +3022,16 @@ qboolean CG_DrawAccboard( void ) {
 CG_DrawIntermission
 =================
 */
+
+void			trap_Cmd_ExecuteText( int exec_when, const char *text );	// leilei - for unlocks only...
+
 static void CG_DrawIntermission( void ) {
 //	int key;
 #ifdef MISSIONPACK
-	//if (cg_singlePlayer.integer) {
+//	if (cg_singlePlayer.integer) {
 	//	CG_DrawCenterString();
-	//	return;
-	//}
+//		return;
+//	}
 #else
 	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
 		CG_DrawCenterString();

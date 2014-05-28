@@ -160,6 +160,12 @@ typedef struct {
 	float			barrelAngle;
 	int				barrelTime;
 	qboolean		barrelSpinning;
+
+	// eye stuff...
+
+	vec3_t			eyepos;		// where our eyes at
+	vec3_t			eyelookat;	// what we seein'
+	lerpFrame_t		head;
 } playerEntity_t;
 
 //=================================================
@@ -201,6 +207,12 @@ typedef struct centity_s {
 	vec3_t			lerpAngles;
 
 	int		newcamrunning;	// leilei - determines if we should look in a direction for running
+	vec3_t			eyesOrigin;
+	vec3_t			eyesAngles;
+
+	vec3_t			eyepos;		// where our eyes at
+	vec3_t			eyepos2;	// where our other eyes at
+	vec3_t			eyelookat;	// what we seein'
 } centity_t;
 
 
@@ -381,7 +393,7 @@ typedef struct {
 	sfxHandle_t		sounds[MAX_CUSTOM_SOUNDS];
 
 	int		isDead;
-
+	vec3_t			eyepos;		// leilei - eye positions loaded from anim cfg
 } clientInfo_t;
 
 
@@ -1291,7 +1303,8 @@ extern	vmCvar_t		cg_cameraOrbitDelay;
 extern	vmCvar_t		cg_timescaleFadeEnd;
 extern	vmCvar_t		cg_timescaleFadeSpeed;
 extern	vmCvar_t		cg_timescale;
-extern	vmCvar_t		cg_cameraMode;
+//extern	vmCvar_t		cg_cameraMode;
+
 extern  vmCvar_t		cg_smallFont;
 extern  vmCvar_t		cg_bigFont;
 extern	vmCvar_t		cg_noTaunt;
@@ -1306,6 +1319,14 @@ extern	vmCvar_t		cg_leiSuperGoreyAwesome;	// LEILEI'S LINE!
 extern	vmCvar_t		cg_leiDebug;
 extern	vmCvar_t		cg_deathcam;
 extern	vmCvar_t		cg_cameramode;
+extern	vmCvar_t		cg_cameraEyes;
+extern	vmCvar_t		cg_cameraEyes_Fwd;
+extern	vmCvar_t		cg_cameraEyes_Up;
+
+extern	vmCvar_t		cg_modelEyes_Up;
+extern	vmCvar_t		cg_modelEyes_Right;
+extern	vmCvar_t		cg_modelEyes_Fwd;
+
 extern	vmCvar_t		cg_oldPlasma;
 extern	vmCvar_t		cg_trueLightning;
 extern	vmCvar_t		cg_music;
@@ -1323,6 +1344,8 @@ extern  vmCvar_t		cg_recordSPDemoName;
 extern	vmCvar_t		cg_obeliskRespawnDelay;
 extern	vmCvar_t		cg_enableDust;
 extern	vmCvar_t		cg_enableBreath;
+
+extern	vmCvar_t		cg_enableFS;
 
 //unlagged - client options
 extern	vmCvar_t		cg_delag;

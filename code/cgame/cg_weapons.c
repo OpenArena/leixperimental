@@ -1190,6 +1190,58 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	// gun angles from bobbing
 
 
+// Weapon leaning and crap from Darkplaces
+/*
+	{
+		vec3_t		gunorg_hp, gunorg_lp;
+		float		side_hp1 = 0.4;
+		float		side_hp2 = 0.4;
+		float		side_hp3 = 0.4;
+		float		side_limit = 1;
+
+		float		up_hp1 = 0.4;
+		float		up_hp2 = 0.4;
+		float		up_hp3 = 0.4;
+		float		up_limit = 1;
+		VectorAdd(gunorg_hp, gunorg_prev, gunorg_hp);
+
+		highpass3_limited(cg.refdef.vieworg, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)up_hp1, (int)up_limit, gunorg_hp, origin);
+		VectorCopy(origin, gunorg_prev);
+		VectorSubtract(gunorg_hp, gunorg_prev, gunorg_hp);
+		VectorCopy(cg.refdef.vieworg, origin);
+
+		VectorAdd(gunorg_hp, gunorg_prev, gunorg_hp);
+		highpass3_limited(cg.refdef.vieworg, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)up_hp1, (int)up_limit, gunorg_hp, origin);
+		VectorCopy(origin, gunorg_prev);
+		VectorSubtract(gunorg_hp, gunorg_prev, gunorg_hp);
+	}
+*/
+	
+/*
+	{
+		vec3_t		gunorg_hp, gunorg_lp;
+		float		side_hp1 = 10.4;
+		float		side_hp2 = 10.4;
+		float		side_hp3 = 10.4;
+		float		side_limit = 1;
+
+		float		up_hp1 = 0.4;
+		float		up_hp2 = 0.4;
+		float		up_hp3 = 0.4;
+		float		up_limit = 1;
+
+		VectorCopy(origin, gunorg_prev);
+
+		highpass3_limited(cg.refdef.vieworg, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)side_hp1, (int)side_limit, cg.time*(int)up_hp1, (int)up_limit, gunorg_hp, origin);
+		VectorCopy(origin, gunorg_prev);
+		VectorSubtract(gunorg_hp, gunorg_prev, gunorg_hp);
+	//	VectorCopy(gunorg_prev, origin);
+	//	VectorCopy(cg.refdef.vieworg, origin);
+	//	VectorAdd(gunorg_hp, origin);
+
+
+	}
+*/
 
 	// Engoo bobbing port
 	if (cg_bobmodel.integer)
@@ -4255,6 +4307,8 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 	localEntity_t	*smoke;
 	vec3_t	kapew;	
 	vec3_t  kapow;
+
+
 
 
 

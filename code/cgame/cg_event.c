@@ -1091,6 +1091,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		else {
 			// do the bullet, because it wasn't predicted
 			CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qtrue, es->eventParm );
+
 			//Com_Printf("Non-predicted bullet\n");
 		}
 //unlagged - attack prediction #2

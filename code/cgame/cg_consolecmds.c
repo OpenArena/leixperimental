@@ -205,6 +205,19 @@ static void CG_spWin_f( void) {
 	CG_AddBufferedSound(cgs.media.winnerSound);
 	//trap_S_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
 	CG_CenterPrint("YOU WIN!", SCREEN_HEIGHT * .30, 0);
+
+	// leilei - Unlock stuff!!!
+		{
+		const char	*s;
+		char		berf[4];
+		const char	*info;
+		info = CG_ConfigString( CS_SERVERINFO );
+		//s = Info_ValueForKey( info, "mapname" );
+		trap_Cvar_VariableStringBuffer( "ui_currentMap", berf, sizeof(berf) );	// get map number instead for list consistency
+
+			// leilei - unlocking maps (for the SP UI) by setting a cvar
+		trap_Cvar_Set(va("ui_sp_unlock_%s", berf), "1");	// YA YUO DID IT!!!1
+		}
 }
 
 static void CG_spLose_f( void) {

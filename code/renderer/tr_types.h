@@ -110,6 +110,14 @@ typedef struct {
 	// extra sprite information
 	float		radius;
 	float		rotation;
+
+
+	// leilei - eyes
+
+	vec3_t		eyepos[2];			// looking from
+	vec3_t		eyelook;			// looking from
+
+
 } refEntity_t;
 
 

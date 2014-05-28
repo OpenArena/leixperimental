@@ -210,7 +210,10 @@ static void CG_CalcVrect (void) {
 
 //==============================================================================
 
+// leilei - eyes hack
 
+extern vec3_t headpos;
+extern vec3_t headang;
 /*
 ===============
 CG_OffsetThirdPersonView
@@ -353,6 +356,8 @@ static void CG_OffsetThirdPersonView( void ) {
 	cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2( focusPoint[2], focusDist );
 	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
 	}
+
+	
 }
 
 
@@ -756,6 +761,32 @@ static int CG_CalcViewValues( void ) {
 		// offset for local bobbing and kicks
 		CG_OffsetFirstPersonView();
 	}
+
+if (cg_cameraEyes.integer && !cg.renderingThirdPerson){
+		vec3_t		forward, right, up;	
+		cg.refdefViewAngles[ROLL] = headang[ROLL];
+		cg.refdefViewAngles[PITCH] = headang[PITCH];
+		cg.refdefViewAngles[YAW] = headang[YAW];
+
+		AngleVectors( headang, forward, NULL, up );
+	if (cg_cameraEyes.integer == 2){
+		VectorMA( headpos, 0, forward, headpos );
+		VectorMA( headpos, 4, up, headpos );
+	}
+	else
+	{
+		VectorMA( headpos, cg_cameraEyes_Fwd.value, forward, headpos );
+		VectorMA( headpos, cg_cameraEyes_Up.value, up, headpos );
+	}
+
+	//	cg.refdef.vieworg[0] = headpos[0];
+	//	cg.refdef.vieworg[1] = headpos[1];
+	//	cg.refdef.vieworg[2] = headpos[2];
+
+		cg.refdef.vieworg[0] = ps->origin[0] + headpos[0];
+		cg.refdef.vieworg[1] = ps->origin[1] + headpos[1];
+		cg.refdef.vieworg[2] = ps->origin[2] + headpos[2];
+		}
 
 	// position eye reletive to origin
 	AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );

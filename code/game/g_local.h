@@ -992,6 +992,7 @@ extern	vmCvar_t	g_maxclients;			// allow this many total, including spectators
 extern	vmCvar_t	g_maxGameClients;		// allow this many active
 extern	vmCvar_t	g_restarted;
 
+
 extern	vmCvar_t	g_dmflags;
 extern	vmCvar_t	g_videoflags;
 extern	vmCvar_t	g_elimflags;
@@ -1044,6 +1045,7 @@ extern	vmCvar_t	g_singlePlayer;
 extern	vmCvar_t	g_redteam;
 extern	vmCvar_t	g_blueteam;
 #endif
+extern	vmCvar_t	g_enableFS;
 extern	vmCvar_t	g_enableDust;
 extern	vmCvar_t	g_enableBreath;
 extern	vmCvar_t	g_proxMineTimeout;

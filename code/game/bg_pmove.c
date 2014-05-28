@@ -1402,6 +1402,12 @@ static void PM_Footsteps( void ) {
 			if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
 				PM_ContinueLegsAnim( LEGS_BACK );
 			}
+			// leilei - new strafe animations for OA3
+			else if ( pm->cmd.rightmove < 0 && pm->cmd.forwardmove == 0 ) 
+						PM_ContinueLegsAnim( LEGS_STRAFE_LEFT );
+			else if ( pm->cmd.rightmove > 0 && pm->cmd.forwardmove == 0 ) 
+						PM_ContinueLegsAnim( LEGS_STRAFE_RIGHT );
+				
 			else {
 				PM_ContinueLegsAnim( LEGS_RUN );
 			}
@@ -1568,6 +1574,8 @@ static void PM_TorsoAnimation( void ) {
 
 
 */
+
+// leilei - heavily improved version for OA3 player animations
 static void PM_TorsoAnimation( void ) {
 	if ( pm->ps->weaponstate == WEAPON_READY ) {
 
@@ -1601,6 +1609,10 @@ static void PM_TorsoAnimation( void ) {
 		else if (  	pm->cmd.forwardmove || pm->cmd.rightmove && pml.groundPlane && pm->xyspeed > 200 && !( pm->cmd.buttons & BUTTON_WALKING )){
 				if ( pm->ps->weapon == WP_GAUNTLET )	PM_ContinueTorsoAnim( TORSO_RUN2 );
 				else if ( pm->ps->powerups[PW_REDFLAG] || pm->ps->powerups[PW_BLUEFLAG] || pm->ps->powerups[PW_NEUTRALFLAG])  PM_ContinueTorsoAnim( TORSO_RUN3 );
+				else if ( pm->cmd.rightmove && !pm->cmd.forwardmove && pml.groundPlane && !( pm->cmd.buttons & BUTTON_WALKING )){
+						PM_ContinueTorsoAnim( TORSO_STRAFE ); }
+
+
 				else					PM_ContinueTorsoAnim( TORSO_RUN );
 			}
 		else

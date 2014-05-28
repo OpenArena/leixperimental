@@ -102,6 +102,7 @@ vmCvar_t	g_blueteam;
 vmCvar_t	g_singlePlayer;
 #endif
 vmCvar_t	g_enableDust;
+vmCvar_t	g_enableFS;
 vmCvar_t	g_enableBreath;
 vmCvar_t	g_proxMineTimeout;
 vmCvar_t	g_music;
@@ -197,6 +198,7 @@ vmCvar_t        g_maxNameChanges;
 
 vmCvar_t        g_timestamp_startgame;
 
+
 // bk001129 - made static to avoid aliasing
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -287,11 +289,12 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_cubeTimeout, "g_cubeTimeout", "30", 0, 0, qfalse },
         #ifdef MISSIONPACK
-	{ &g_redteam, "g_redteam", "Stroggs", CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO , 0, qtrue, qtrue },
-	{ &g_blueteam, "g_blueteam", "Pagans", CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO , 0, qtrue, qtrue  },
+	{ &g_redteam, "g_redteam", "Blue", CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO , 0, qtrue, qtrue },
+	{ &g_blueteam, "g_blueteam", "Red", CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO , 0, qtrue, qtrue  },
 	{ &g_singlePlayer, "ui_singlePlayerActive", "", 0, 0, qfalse, qfalse  },
         #endif
 
+	{ &g_enableFS, "g_enableFS", "0", CVAR_SERVERINFO, 0, qtrue, qfalse },
 	{ &g_enableDust, "g_enableDust", "0", CVAR_SERVERINFO, 0, qtrue, qfalse },
 	{ &g_enableBreath, "g_enableBreath", "0", CVAR_SERVERINFO, 0, qtrue, qfalse },
 	{ &g_proxMineTimeout, "g_proxMineTimeout", "20000", 0, 0, qfalse },
@@ -397,6 +400,8 @@ static cvarTable_t		gameCvarTable[] = {
         { &g_maxNameChanges, "g_maxNameChanges", "50", 0, 0, qfalse},
 
         { &g_timestamp_startgame, "g_timestamp", "0001-01-01 00:00:00", CVAR_SERVERINFO, 0, qfalse}
+
+
         
 };
 

@@ -39,6 +39,10 @@ char	*cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {
 	"*taunt.wav"
 };
 
+// leilei - eyes hack
+
+vec3_t headpos;
+vec3_t headang;
 
 /*
 ================
@@ -159,6 +163,15 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 				ci->headOffset[i] = atof( token );
 			}
 			continue;
+		} else if ( !Q_stricmp( token, "eyes" ) ) {	// leilei - EYES
+			for ( i = 0 ; i < 3 ; i++ ) {
+				token = COM_Parse( &text_p );
+				if ( !token ) {
+					break;
+				}
+				ci->eyepos[i] = atof( token );
+			}
+			continue;
 		} else if ( !Q_stricmp( token, "sex" ) ) {
 			token = COM_Parse( &text_p );
 			if ( !token ) {
@@ -225,6 +238,16 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 				continue;
 			}
 			if( i == TORSO_RUN3 ) {
+				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
+				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
+				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
+				animations[i].loopFrames = animations[TORSO_STAND].loopFrames;
+				animations[i].numFrames = animations[TORSO_STAND].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == TORSO_STRAFE ) {
 				animations[i].firstFrame = animations[TORSO_STAND].firstFrame;
 				animations[i].frameLerp = animations[TORSO_STAND].frameLerp;
 				animations[i].initialLerp = animations[TORSO_STAND].initialLerp;
@@ -314,7 +337,26 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 				animations[i].flipflop = qfalse;
 				continue;
 			}
-		
+			if( i == LEGS_STRAFE_LEFT ) {
+				animations[i].firstFrame = animations[LEGS_RUN].firstFrame;
+				animations[i].frameLerp = animations[LEGS_RUN].frameLerp;
+				animations[i].initialLerp = animations[LEGS_RUN].initialLerp;
+				animations[i].loopFrames = animations[LEGS_RUN].loopFrames;
+				animations[i].numFrames = animations[LEGS_RUN].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}
+			if( i == LEGS_STRAFE_RIGHT ) {
+				animations[i].firstFrame = animations[LEGS_RUN].firstFrame;
+				animations[i].frameLerp = animations[LEGS_RUN].frameLerp;
+				animations[i].initialLerp = animations[LEGS_RUN].initialLerp;
+				animations[i].loopFrames = animations[LEGS_RUN].loopFrames;
+				animations[i].numFrames = animations[LEGS_RUN].numFrames;
+				animations[i].reversed = qfalse;
+				animations[i].flipflop = qfalse;
+				continue;
+			}			
 			break;
 		}
 		animations[i].firstFrame = atoi( token );
@@ -626,6 +668,7 @@ static qboolean	CG_RegisterClientSkin( clientInfo_t *ci, const char *teamName, c
 	return qtrue;
 }
 
+
 /*
 ==========================
 CG_RegisterClientModelname
@@ -635,6 +678,7 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	char	filename[MAX_QPATH*2];
 	const char		*headName;
 	char newTeamName[MAX_QPATH*2];
+	int FSloaded = 0;
 
 	if ( headModelName[0] == '\0' ) {
 		headName = modelName;
@@ -642,6 +686,36 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	else {
 		headName = headModelName;
 	}
+
+	if (cg_enableFS.integer){
+
+		Com_sprintf( filename, sizeof( filename ), "models/players/%s/lowerfs.mdr", modelName );
+		ci->legsModel = trap_R_RegisterModel( filename );
+			if ( ci->legsModel ) FSloaded = 1;
+		if ( !ci->legsModel ) {
+			Com_sprintf( filename, sizeof( filename ), "models/players/%s/lowerfs.md3", modelName );
+			ci->legsModel = trap_R_RegisterModel( filename );
+			if ( ci->legsModel ) FSloaded = 1;
+		}
+	
+		Com_sprintf( filename, sizeof( filename ), "models/players/%s/upperfs.mdr", modelName );
+		ci->torsoModel = trap_R_RegisterModel( filename );
+			if ( ci->torsoModel )FSloaded = 1;
+		if ( !ci->torsoModel ) {
+			Com_sprintf( filename, sizeof( filename ), "models/players/%s/upperfs.md3", modelName );
+			if ( ci->torsoModel )FSloaded = 1;
+			
+		}
+	
+		if (FSloaded)
+			Com_Printf( "%s is fanservice\n", filename );
+		else
+			Com_Printf( "%s can't provide fanservice\n", filename );
+	}
+
+
+	if (FSloaded == 0)
+	{
 	Com_sprintf( filename, sizeof( filename ), "models/players/%s/lower.mdr", modelName );
 	ci->legsModel = trap_R_RegisterModel( filename );
 	if ( !ci->legsModel ) {
@@ -679,6 +753,8 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	}
 		}
 	}
+
+	}		// enableFS
 
 	if( headName[0] == '*' ) {
 		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.mdr", &headModelName[1], &headModelName[1] );
@@ -882,6 +958,7 @@ CG_CopyClientInfoModel
 */
 static void CG_CopyClientInfoModel( clientInfo_t *from, clientInfo_t *to ) {
 	VectorCopy( from->headOffset, to->headOffset );
+	VectorCopy( from->eyepos, to->eyepos );
 	to->footsteps = from->footsteps;
 	to->gender = from->gender;
 
@@ -1513,6 +1590,9 @@ Handles seperate torso motion
   if < 45 degrees, also show in torso
 ===============
 */
+
+vec3_t		eyeat;
+
 static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], vec3_t head[3] ) {
 	vec3_t		legsAngles, torsoAngles, headAngles;
 	float		dest;
@@ -1521,11 +1601,36 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	float		speed;
 	int			dir, clientNum;
 	clientInfo_t	*ci;
+	int		camereyes;
+	int		neweyes = 0;	// leilei - set this to 1 if the model supports the new eye tracking
+	vec3_t		eyeAngles;
 
+	if (neweyes)
+		{
+		VectorCopy( cent->lerpAngles, eyeAngles );
+		eyeAngles[YAW] = AngleMod( eyeAngles[YAW] );
+		VectorClear( headAngles );
+		}
+	else
+	{
 	VectorCopy( cent->lerpAngles, headAngles );
 	headAngles[YAW] = AngleMod( headAngles[YAW] );
+	}
+
+
+	//headAngles[YAW] = AngleMod( headAngles[YAW] );
+
+
 	VectorClear( legsAngles );
 	VectorClear( torsoAngles );
+
+
+	camereyes = 0;
+	if ( cent->currentState.number == cg.snap->ps.clientNum) {
+			camereyes = 1; // it's me!
+
+
+		}
 
 	// leilei -- new third person camera prep
 	cent->newcamrunning = 0;
@@ -1541,6 +1646,16 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 
 	// --------- yaw -------------
 
+
+	// turn head if reached the eye tolerance limit
+	if (neweyes){
+	float angdif;
+	float angy = 45;
+	 angdif = AngleSubtract(eyeAngles[YAW], headAngles[YAW]);
+		if (angdif > angy || angdif < -angy)
+		cent->pe.head.yawing = qtrue;	// always center
+
+	}
 	// allow yaw to drift a bit
 	if ( ( cent->currentState.legsAnim & ~ANIM_TOGGLEBIT ) != LEGS_IDLE 
 		|| ((cent->currentState.torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_STAND 
@@ -1549,7 +1664,11 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 		cent->pe.torso.yawing = qtrue;	// always center
 		cent->pe.torso.pitching = qtrue;	// always center
 		cent->pe.legs.yawing = qtrue;	// always center
+		if (neweyes)
+		cent->pe.head.yawing = qtrue;	// always center
 	}
+
+
 
 
 	// etc
@@ -1564,24 +1683,8 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 			vec3_t fwad, rait;			
 			float	side, frt, rrt;
 			AngleVectors(veel, velocity, fwad, rait);
-	
 			speed *= 0.05f;
-	
-		//	AnglesToAxis( legsAngles, axis );
-		//	side = speed * DotProduct( velocity, axis[1] );
-		//	headAngles[YAW] = velocity[YAW] * cg_leiDebug.value;
-	
-		//	side = speed * DotProduct( velocity, axis[0] );
-			//headAngles[YAW] += side;
 		}
-
-
-
-
-
-
-
-
 	}
 
 	// adjust legs for movement dir
@@ -1594,15 +1697,16 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 			CG_Error( "Bad player movement angle" );
 		}
 	}
-	if(cent->newcamrunning){
-
-	//headAngles[YAW] = cent->pe.legs.yawAngle + movementOffsets[ dir ];
-	}
+	if (neweyes)
+	headAngles[YAW] = eyeAngles[YAW] + 0.25 * movementOffsets[ dir ];
 
 	legsAngles[YAW] = headAngles[YAW] + movementOffsets[ dir ];
 	torsoAngles[YAW] = headAngles[YAW] + 0.25 * movementOffsets[ dir ];
 	
-
+	if (neweyes){
+	CG_SwingAngles( headAngles[YAW], 180, 90, cg_swingSpeed.value, &cent->pe.head.yawAngle, &cent->pe.head.yawing );
+	headAngles[YAW] = cent->pe.head.yawAngle;
+	}
 	// torso
 	if (cg_cameramode.integer == 1)
 	{
@@ -1616,17 +1720,37 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	CG_SwingAngles( legsAngles[YAW], 40, 90, cg_swingSpeed.value, &cent->pe.legs.yawAngle, &cent->pe.legs.yawing );
 	}
 
+
+
 	torsoAngles[YAW] = cent->pe.torso.yawAngle;
 	legsAngles[YAW] = cent->pe.legs.yawAngle;
 
 
 	// --------- pitch -------------
+	// turn head if reached the eye tolerance limit
+	if (neweyes){
+	float angdif;
+	float angy = 12;
+	 angdif = AngleSubtract(eyeAngles[PITCH], headAngles[PITCH]);
+		if (angdif > angy || angdif < -angy)
+		cent->pe.head.pitching = qtrue;	// always center
 
+	}
 	// only show a fraction of the pitch angle in the torso
+	if (neweyes){
+	if ( eyeAngles[PITCH] > 180 ) {
+		dest = (-360 + eyeAngles[PITCH]) * 0.75f;
+	} else {
+		dest = eyeAngles[PITCH] * 0.75f;
+	}
+	}
+	else
+	{
 	if ( headAngles[PITCH] > 180 ) {
 		dest = (-360 + headAngles[PITCH]) * 0.75f;
 	} else {
 		dest = headAngles[PITCH] * 0.75f;
+	}
 	}
 	if (cg_cameramode.integer == 1)
 	{
@@ -1634,6 +1758,7 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 
 	headAngles[PITCH] = cent->pe.torso.pitchAngle;
 	//headAngles[YAW] = cent->pe.torso.yawAngle;
+
 	headAngles[YAW] = torsoAngles[YAW] + 0.25 * movementOffsets[ dir ];
 	torsoAngles[PITCH] = cent->pe.torso.pitchAngle;
 	}
@@ -1650,6 +1775,9 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 		ci = &cgs.clientinfo[ clientNum ];
 		if ( ci->fixedtorso ) {
 			torsoAngles[PITCH] = 0.0f;
+		}
+		if ( camereyes) {
+			torsoAngles[PITCH] = 0.0f;	// don't pitch 
 		}
 	}
 
@@ -1679,22 +1807,62 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	clientNum = cent->currentState.clientNum;
 	if ( clientNum >= 0 && clientNum < MAX_CLIENTS ) {
 		ci = &cgs.clientinfo[ clientNum ];
+
+
 		if ( ci->fixedlegs ) {
 			legsAngles[YAW] = torsoAngles[YAW];
 			legsAngles[PITCH] = 0.0f;
 			legsAngles[ROLL] = 0.0f;
 		}
+
+	// leilei - don't lean for our new strafe animations
+	if (( cent->currentState.legsAnim & ~ANIM_TOGGLEBIT ) == LEGS_STRAFE_LEFT || ( cent->currentState.legsAnim & ~ANIM_TOGGLEBIT ) == LEGS_STRAFE_RIGHT){
+				legsAngles[YAW] = torsoAngles[YAW];
+				//legsAngles[PITCH] = 0.0f;
+				legsAngles[ROLL] = 0.0f;
+		}
+
 	}
 
 	// pain twitch
 	CG_AddPainTwitch( cent, torsoAngles );
+	// TODO: make eyes erode on pain twitch
+
+	// leilei - eyes hack
+
+	if (camereyes){
+	cent->eyesAngles[YAW] = headAngles[YAW];
+	cent->eyesAngles[PITCH] = headAngles[PITCH];
+	cent->eyesAngles[ROLL] = headAngles[ROLL];
+	}
 
 	// pull the angles back out of the hierarchial chain
+	AnglesSubtract( eyeAngles, headAngles, eyeAngles );
 	AnglesSubtract( headAngles, torsoAngles, headAngles );
 	AnglesSubtract( torsoAngles, legsAngles, torsoAngles );
 	AnglesToAxis( legsAngles, legs );
 	AnglesToAxis( torsoAngles, torso );
 	AnglesToAxis( headAngles, head );
+
+	//VectorCopy( cent->lerpAngles, head.oldorigin );
+	
+	// eyes crap
+	{
+	vec3_t	eyelookat;
+	vec3_t	eyelookfrom;
+	vec3_t	forwaad;
+	trace_t		traced;
+
+	// offset from the model we have.
+	VectorClear(eyelookfrom);
+//	eyelookfrom[0] += 3.0; // cg_modelEyes_Up.value;		// TODO: Read from eeys.cfg or some eye parameter from animation.cfg
+//	eyelookfrom[1] += 1.4; // cg_modelEyes_Right.value;
+//	eyelookfrom[2] += 3.3; //cg_modelEyes_Fwd.value;
+
+	VectorCopy(ci->eyepos, cent->pe.eyepos);	
+	//VectorCopy(eyelookfrom, cent->pe.eyepos);			// leilei - copy eye poistion
+	}
+
 }
 
 
@@ -2471,7 +2639,7 @@ void CG_Player( centity_t *cent ) {
 	float			c;
 	float			angle;
 	vec3_t			dir, angles;
-
+	int camereyes = 0;
 	// the client number is stored in clientNum.  It can't be derived
 	// from the entity number, because a single client may have
 	// multiple corpses on the level using the same clientinfo
@@ -2489,13 +2657,15 @@ void CG_Player( centity_t *cent ) {
 
 	// get the player model information
 	renderfx = 0;
+
 	if ( cent->currentState.number == cg.snap->ps.clientNum) {
+		camereyes = 1;	// it's me!
 		if (!cg.renderingThirdPerson) {
 			renderfx = RF_THIRD_PERSON;			// only draw in mirrors
 		} else {
-			if (cg_cameraMode.integer) {
-				return;
-			}
+	//		if (cg_cameraMode.integer) {
+	//			return;
+	//		}
 		}
 	}
 
@@ -2507,6 +2677,7 @@ void CG_Player( centity_t *cent ) {
 	// get the rotation information
 	CG_PlayerAngles( cent, legs.axis, torso.axis, head.axis );
 	
+
 	// get the animation state (after rotation, to allow feet shuffle)
 	CG_PlayerAnimation( cent, &legs.oldframe, &legs.frame, &legs.backlerp,
 		 &torso.oldframe, &torso.frame, &torso.backlerp );
@@ -2540,12 +2711,16 @@ void CG_Player( centity_t *cent ) {
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
 
+	if (cg_cameraEyes.integer){
+			legs.renderfx &= RF_FIRST_PERSON;
+		}
 	CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team, qfalse );
 
 	// if the model failed, allow the default nullmodel to be displayed
 	if (!legs.hModel) {
 		return;
 	}
+
 
 	//
 	// add the torso
@@ -2563,6 +2738,9 @@ void CG_Player( centity_t *cent ) {
 
 	torso.shadowPlane = shadowPlane;
 	torso.renderfx = renderfx;
+	if (cg_cameraEyes.integer){
+			torso.renderfx &= RF_FIRST_PERSON;
+		}
 
 	CG_AddRefEntityWithPowerups( &torso, &cent->currentState, ci->team, qfalse );
 
@@ -2772,6 +2950,7 @@ void CG_Player( centity_t *cent ) {
 	// add the head
 	//
 	head.hModel = ci->headModel;
+	
 	if (!head.hModel) {
 		return;
 	}
@@ -2781,7 +2960,60 @@ void CG_Player( centity_t *cent ) {
 
 	CG_PositionRotatedEntityOnTag( &head, &torso, ci->torsoModel, "tag_head");
 
+	// 
+	// add the eyes
+	//
+
+	
+
+	if (camereyes){
+	cent->eyesOrigin[0] = head.origin[0];
+	cent->eyesOrigin[1] = head.origin[1];
+	cent->eyesOrigin[2] = head.origin[2];
+	if (cg_cameraEyes.integer == 2){
+	vectoangles( head.axis[0], headang);
+	}
+	else
+	{
+
+	VectorCopy(cent->lerpAngles, headang);
+	}
+
+
+
+
+	if (cg_cameraEyes.integer){
+	VectorCopy(head.origin, cent->eyesOrigin);
+
+	VectorSubtract(cent->eyesOrigin, cent->lerpOrigin, cent->eyesOrigin);
+	VectorCopy(cent->eyesOrigin, headpos);
+	}
+	}
+
+	VectorCopy(cent->pe.eyepos, head.eyepos[0]);				// Copy it to our refdef for the renderer
+
+	// HMM
+	{
+	vec3_t v, forwaad;
+	vec3_t	angles;
+	vec3_t	dir;
+	float len;
+	vec3_t orrg;
+	vec3_t av[3];
+	trace_t trace;
+	VectorCopy(cent->lerpAngles, v);
+	AngleVectors( v, forwaad, NULL, NULL );
+	VectorMA(cent->lerpOrigin, 1024, forwaad, v );
+	VectorCopy(head.origin, orrg);
+	CG_Trace (&trace, orrg, NULL, NULL, v, -1, CONTENTS_SOLID);
+			if (trace.fraction < 1)
+				VectorCopy(trace.endpos, v);				// look closer
+	VectorCopy(v, head.eyelook);				// Copy it to our refdef for the renderer
+	}
+
 	head.shadowPlane = shadowPlane;
+
+
 	head.renderfx = renderfx;
 
 	CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team, qfalse );
@@ -2803,6 +3035,9 @@ void CG_Player( centity_t *cent ) {
 	//VectorScale( head.axis[0], 3.17, head.axis[0] );
 	//VectorScale( head.axis[1], 3.17, head.axis[1] );
 	//VectorScale( head.axis[2], 3.17, head.axis[2] );
+
+
+
 }
 
 
@@ -2839,6 +3074,14 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 	cent->pe.torso.yawing = qfalse;
 	cent->pe.torso.pitchAngle = cent->rawAngles[PITCH];
 	cent->pe.torso.pitching = qfalse;
+
+	memset( &cent->pe.head, 0, sizeof( cent->pe.head ) );
+	cent->pe.head.yawAngle = cent->rawAngles[YAW];
+	cent->pe.head.yawing = qfalse;
+	cent->pe.head.pitchAngle = cent->rawAngles[PITCH];
+	cent->pe.head.pitching = qfalse;
+
+
 
 	if ( cg_debugPosition.integer ) {
 		CG_Printf("%i ResetPlayerEntity yaw=%i\n", cent->currentState.number, cent->pe.torso.yawAngle );

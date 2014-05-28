@@ -632,6 +632,9 @@ void SP_worldspawn( void ) {
 	G_SpawnString( "gravity", "800", &s );
 	trap_Cvar_Set( "g_gravity", s );
 
+	G_SpawnString( "enableFS", "0", &s );
+	trap_Cvar_Set( "g_enableFS", s );
+
 	G_SpawnString( "enableDust", "0", &s );
 	trap_Cvar_Set( "g_enableDust", s );
 
