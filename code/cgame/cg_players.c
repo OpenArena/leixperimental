@@ -1602,16 +1602,9 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	int			dir, clientNum;
 	clientInfo_t	*ci;
 	int		camereyes;
-	int		neweyes = 0;	// leilei - set this to 1 if the model supports the new eye tracking
-	vec3_t		eyeAngles;
 
-	if (neweyes)
-		{
-		VectorCopy( cent->lerpAngles, eyeAngles );
-		eyeAngles[YAW] = AngleMod( eyeAngles[YAW] );
-		VectorClear( headAngles );
-		}
-	else
+
+	
 	{
 	VectorCopy( cent->lerpAngles, headAngles );
 	headAngles[YAW] = AngleMod( headAngles[YAW] );
@@ -1648,14 +1641,7 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 
 
 	// turn head if reached the eye tolerance limit
-	if (neweyes){
-	float angdif;
-	float angy = 45;
-	 angdif = AngleSubtract(eyeAngles[YAW], headAngles[YAW]);
-		if (angdif > angy || angdif < -angy)
-		cent->pe.head.yawing = qtrue;	// always center
-
-	}
+	
 	// allow yaw to drift a bit
 	if ( ( cent->currentState.legsAnim & ~ANIM_TOGGLEBIT ) != LEGS_IDLE 
 		|| ((cent->currentState.torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_STAND 
@@ -1664,8 +1650,7 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 		cent->pe.torso.yawing = qtrue;	// always center
 		cent->pe.torso.pitching = qtrue;	// always center
 		cent->pe.legs.yawing = qtrue;	// always center
-		if (neweyes)
-		cent->pe.head.yawing = qtrue;	// always center
+		
 	}
 
 
@@ -1697,16 +1682,12 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 			CG_Error( "Bad player movement angle" );
 		}
 	}
-	if (neweyes)
-	headAngles[YAW] = eyeAngles[YAW] + 0.25 * movementOffsets[ dir ];
+
 
 	legsAngles[YAW] = headAngles[YAW] + movementOffsets[ dir ];
 	torsoAngles[YAW] = headAngles[YAW] + 0.25 * movementOffsets[ dir ];
 	
-	if (neweyes){
-	CG_SwingAngles( headAngles[YAW], 180, 90, cg_swingSpeed.value, &cent->pe.head.yawAngle, &cent->pe.head.yawing );
-	headAngles[YAW] = cent->pe.head.yawAngle;
-	}
+	
 	// torso
 	if (cg_cameramode.integer == 1)
 	{
@@ -1728,23 +1709,9 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 
 	// --------- pitch -------------
 	// turn head if reached the eye tolerance limit
-	if (neweyes){
-	float angdif;
-	float angy = 12;
-	 angdif = AngleSubtract(eyeAngles[PITCH], headAngles[PITCH]);
-		if (angdif > angy || angdif < -angy)
-		cent->pe.head.pitching = qtrue;	// always center
-
-	}
+	
 	// only show a fraction of the pitch angle in the torso
-	if (neweyes){
-	if ( eyeAngles[PITCH] > 180 ) {
-		dest = (-360 + eyeAngles[PITCH]) * 0.75f;
-	} else {
-		dest = eyeAngles[PITCH] * 0.75f;
-	}
-	}
-	else
+	
 	{
 	if ( headAngles[PITCH] > 180 ) {
 		dest = (-360 + headAngles[PITCH]) * 0.75f;
@@ -1837,7 +1804,6 @@ static void CG_PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t torso[3], v
 	}
 
 	// pull the angles back out of the hierarchial chain
-	AnglesSubtract( eyeAngles, headAngles, eyeAngles );
 	AnglesSubtract( headAngles, torsoAngles, headAngles );
 	AnglesSubtract( torsoAngles, legsAngles, torsoAngles );
 	AnglesToAxis( legsAngles, legs );
@@ -2624,6 +2590,8 @@ int CG_LightVerts( vec3_t normal, int numVerts, polyVert_t *verts )
 CG_Player
 ===============
 */
+extern	vmCvar_t	cg_leiChibi;		
+
 void CG_Player( centity_t *cent ) {
 	clientInfo_t	*ci;
 	refEntity_t		legs;
@@ -2640,6 +2608,54 @@ void CG_Player( centity_t *cent ) {
 	float			angle;
 	vec3_t			dir, angles;
 	int camereyes = 0;
+	// leilei - chibi hack
+	float chibifactorbody, chibifactortorso, chibifactorhead = 0;
+
+	if (cg_leiChibi.integer > 0){
+
+
+		//	chibifactorhead = cg_leiChibi.value;
+		//	chibifactorbody = 1.0f - (cg_leiChibi.value - 1.3f * 1.3f);
+
+		//	chibifactorhead = chibifactorhead + (chibifactorbody / 2); 
+
+		//	if (chibifactorbody < 0.5) chibifactorbody = 0.5;
+		//	if (chibifactorbody > 1.2) chibifactorbody = 1.2;
+
+		//	if (chibifactorhead < 0.2) chibifactorhead = 0.2;
+		//	if (chibifactorhead > 4) chibifactorhead = 4;
+
+			if (cg_leiChibi.integer == 1){
+				// chibi SD proportion
+				chibifactortorso = 0.0f;
+				chibifactorbody = 0.62f;
+				chibifactorhead = 2.7f;
+				}
+			else if (cg_leiChibi.integer == 2){
+				// slightly younger proportion
+				chibifactorbody = 0.92f;
+				chibifactortorso = 0.82f;
+				chibifactorhead = 1.30f;
+				}
+			else if (cg_leiChibi.integer == 3){
+				// slightly more 'real' proportion
+				chibifactorbody = 0.92f;
+				chibifactortorso = 0.97f;
+				chibifactorhead = 0.92f;
+				}
+			else if (cg_leiChibi.integer == 4){
+				// big torso
+				chibifactorbody = 0.85f;
+				chibifactortorso = 1.3f;
+				chibifactorhead = 0.91f;
+				}
+
+		}
+	else
+	{
+		chibifactorbody = chibifactortorso = chibifactorhead = 0;	// normal scale...
+	}
+
 	// the client number is stored in clientNum.  It can't be derived
 	// from the entity number, because a single client may have
 	// multiple corpses on the level using the same clientinfo
@@ -2707,6 +2723,16 @@ void CG_Player( centity_t *cent ) {
 	VectorCopy( cent->lerpOrigin, legs.origin );
 
 	VectorCopy( cent->lerpOrigin, legs.lightingOrigin );
+
+// leilei - chibi mode hack
+	if (chibifactorbody){
+	VectorScale( legs.axis[0], chibifactorbody, legs.axis[0] );
+	VectorScale( legs.axis[1], chibifactorbody, legs.axis[1] );
+	VectorScale( legs.axis[2], chibifactorbody, legs.axis[2] );
+	}
+
+
+
 	legs.shadowPlane = shadowPlane;
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
@@ -2714,6 +2740,8 @@ void CG_Player( centity_t *cent ) {
 	if (cg_cameraEyes.integer){
 			legs.renderfx &= RF_FIRST_PERSON;
 		}
+
+
 	CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team, qfalse );
 
 	// if the model failed, allow the default nullmodel to be displayed
@@ -2741,6 +2769,17 @@ void CG_Player( centity_t *cent ) {
 	if (cg_cameraEyes.integer){
 			torso.renderfx &= RF_FIRST_PERSON;
 		}
+
+
+	if (chibifactortorso){
+	VectorScale( torso.axis[0], chibifactortorso, torso.axis[0] );
+	VectorScale( torso.axis[1], chibifactortorso, torso.axis[1] );
+	VectorScale( torso.axis[2], chibifactortorso, torso.axis[2] );
+	}
+
+
+
+
 
 	CG_AddRefEntityWithPowerups( &torso, &cent->currentState, ci->team, qfalse );
 
@@ -3016,6 +3055,14 @@ void CG_Player( centity_t *cent ) {
 
 	head.renderfx = renderfx;
 
+
+	// leilei - chibi mode hack
+	if (chibifactorhead){
+	VectorScale( head.axis[0], chibifactorhead, head.axis[0] );
+	VectorScale( head.axis[1], chibifactorhead, head.axis[1] );
+	VectorScale( head.axis[2], chibifactorhead, head.axis[2] );
+	}
+
 	CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team, qfalse );
 
 	CG_BreathPuffs(cent, &head);
@@ -3029,14 +3076,6 @@ void CG_Player( centity_t *cent ) {
 
 	// add powerups floating behind the player
 	CG_PlayerPowerups( cent, &torso );
-
-	// Chibi this crap
-
-	//VectorScale( head.axis[0], 3.17, head.axis[0] );
-	//VectorScale( head.axis[1], 3.17, head.axis[1] );
-	//VectorScale( head.axis[2], 3.17, head.axis[2] );
-
-
 
 }
 

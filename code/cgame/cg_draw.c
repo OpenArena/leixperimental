@@ -333,7 +333,7 @@ void CG_Draw3DModelEyes( float x, float y, float w, float h, qhandle_t model, qh
 	vec3_t angers, right, fawed, awp, ah;
 	VectorCopy(angles, angers);
 	angers[0] *= 2;
-	angers[1] *= -2.2;
+	angers[1] *= -2.0;
 	AngleVectors(angers, fawed, right, awp);
 	VectorMA(origin, 1024, fawed, ah );
 	VectorCopy( ah, ent.eyelook );

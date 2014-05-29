@@ -425,6 +425,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_leiBrassNoise, "cg_leiBrassNoise", "0", CVAR_ARCHIVE},				// LEILEI 
 	{ &cg_leiSuperGoreyAwesome, "cg_leiSuperGoreyAwesome", "0", CVAR_ARCHIVE},	// LEILEI 
 	{ &cg_leiDebug, "cg_leiDebug", "0", CVAR_ARCHIVE},	// LEILEI 
+	{ &cg_leiChibi, "cg_leiChibi", "0", CVAR_CHEAT},	// LEILEI 
 	{ &cg_leiWidescreen, "cg_leiWidescreen", "1", CVAR_ARCHIVE},	// LEILEI 
 	{ &cg_deathcam, "cg_deathcam", "1", CVAR_ARCHIVE},				// LEILEI 
 	{ &cg_cameramode, "cg_cameramode", "0", CVAR_ARCHIVE},				// LEILEI 
