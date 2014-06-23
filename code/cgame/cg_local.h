@@ -464,6 +464,20 @@ typedef struct {
 #define MAX_REWARDSTACK		10
 #define MAX_SOUNDBUFFER		20
 
+
+// loadingscreen
+#ifdef SCRIPTHUD
+	typedef struct
+	{
+	  int time;
+	  int length;
+	} consoleLine_t;
+
+#define MAX_CONSOLE_TEXT 8192
+#define MAX_CONSOLE_LINES 32
+#endif
+// end loadingscreen
+
 //======================================================================
 
 // all cg.stepTime, cg.duckTime, cg.landTime, etc are set to cg.time when the action
@@ -693,6 +707,19 @@ typedef struct {
 	// leilei
 	float		bobfraccos;
 	float		bobfracsin2;
+
+// loadingscreen
+#ifdef SCRIPTHUD
+	float         mediaFraction;
+	float         soundFraction;
+	float         graphicFraction;
+	char          consoleText[ MAX_CONSOLE_TEXT ];
+	consoleLine_t consoleLines[ MAX_CONSOLE_LINES ];
+	int           numConsoleLines;
+	qboolean      consoleValid;
+#endif
+
+
 } cg_t;
 
 
@@ -1535,6 +1562,14 @@ qboolean CG_YourTeamHasFlag( void );
 qboolean CG_OtherTeamHasFlag( void );
 qhandle_t CG_StatusHandle(int task);
 
+// loadingscreen
+#ifdef SCRIPTHUD
+	void  CG_DrawLoadingScreen( void );
+	void  CG_UpdateMediaFraction( float newFract );
+	void  CG_UpdateSoundFraction( float newFract );
+	void  CG_UpdateGraphicFraction( float newFract );
+#endif
+// end loadingscreen
 
 
 //
@@ -1933,6 +1968,7 @@ void	CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duratio
 extern qboolean		initparticles;
 int CG_NewParticleArea ( int num );
 
+extern int wideAdjustX;
 
 // LEILEI ENHANCEMENT
 

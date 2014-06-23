@@ -155,6 +155,7 @@ void CG_DrawInformation( void ) {
 	qhandle_t	detail;
 	char		buf[1024];
 
+
 	info = CG_ConfigString( CS_SERVERINFO );
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 

@@ -140,6 +140,7 @@ typedef struct {
 
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
+
 } refdef_t;
 
 
@@ -216,5 +217,8 @@ typedef struct {
 	qboolean				stereoEnabled;
 	qboolean				smpActive;		// dual processor
 } glconfig_t;
+
+
+
 
 #endif	// __TR_TYPES_H

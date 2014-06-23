@@ -2628,7 +2628,7 @@ static void CG_DrawCrosshair(void)
 		}
 	}
 
-	x = cg_crosshairX.integer - cgs.screenXBias * 0.65; // leilei - widescreen adjust - NOTE: THIS IS WRONG SOMEHOW
+	x = cg_crosshairX.integer - wideAdjustX; // leilei - widescreen adjust
 	y = cg_crosshairY.integer;
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
@@ -3439,6 +3439,14 @@ Perform all drawing needed to completely fill the screen
 void CG_DrawActive( stereoFrame_t stereoView ) {
 	// optionally draw the info screen instead
 	if ( !cg.snap ) {
+// loadingscreen
+#ifdef SCRIPTHUD
+		menuDef_t *loading = Menus_FindByName( "Loading" );
+		if(loading==NULL)
+	//	if(!loading)
+
+#endif
+// end loadingscreen
 		CG_DrawInformation();
 		return;
 	}
@@ -3463,5 +3471,55 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
  	CG_Draw2D(stereoView);
 }
 
+
+
+// loadingscreen
+#ifdef SCRIPTHUD
+/*
+======================
+CG_UpdateMediaFraction
+======================
+*/
+void CG_UpdateMediaFraction( float newFract )
+{
+  cg.mediaFraction = newFract;
+  trap_UpdateScreen( );
+}
+/*
+======================
+CG_UpdateSoundFraction
+======================
+*/
+void CG_UpdateSoundFraction( float newFract )
+{
+  cg.soundFraction = newFract;
+  trap_UpdateScreen( );
+}
+/*
+======================
+CG_UpdateGraphicFraction
+======================
+*/
+void CG_UpdateGraphicFraction( float newFract )
+{
+  cg.graphicFraction = newFract;
+  trap_UpdateScreen( );
+}
+/*
+====================
+CG_DrawLoadingScreen
+====================
+*/
+void CG_DrawLoadingScreen( void )
+{
+	menuDef_t *loading = Menus_FindByName( "Loading" );
+	if(loading!=NULL) {
+//	if(loading) {
+		Menu_Paint( loading, qtrue );
+	} else {
+		CG_DrawInformation();
+	}
+}
+#endif
 
 

@@ -445,6 +445,67 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 }
 
 /*
+======================
+CG_ParseEyesFile
+
+Read eyes definitions.  Maybe this should be done engine-side for mod compatiblity? :S
+======================
+*/
+static qboolean	CG_ParseEyesFile( const char *filename, clientInfo_t *ci ) {
+	char		*text_p, *prev;
+	int			len;
+	int			i;
+	char		*token;
+	float		fps;
+	int			skip;
+	char		text[20000];
+	fileHandle_t	f;
+	// load the file
+	len = trap_FS_FOpenFile( filename, &f, FS_READ );
+	if ( len <= 0 ) {
+		return qfalse;
+	}
+	if ( len >= sizeof( text ) - 1 ) {
+		CG_Printf( "File %s too long\n", filename );
+		trap_FS_FCloseFile( f );
+		return qfalse;
+	}
+	trap_FS_Read( text, len, f );
+	text[len] = 0;
+	trap_FS_FCloseFile( f );
+
+	// parse the text
+	text_p = text;
+	skip = 0;	// quite the compiler warning
+
+
+	// read optional parameters
+	while ( 1 ) {
+		prev = text_p;	// so we can unget
+		token = COM_Parse( &text_p );
+		if ( !token ) {
+			break;
+		}
+
+
+		if ( !Q_stricmp( token, "eyes" ) ) {	// leilei - EYES
+			for ( i = 0 ; i < 3 ; i++ ) {
+				token = COM_Parse( &text_p );
+				if ( !token ) {
+					break;
+				}
+				ci->eyepos[i] = atof( token );
+			}
+			continue;
+		}
+		break;
+	}
+
+	return qtrue;
+}
+
+
+/*
 ==========================
 CG_FileExists
 ==========================
@@ -816,6 +877,14 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 			return qfalse;
 		}
 	}
+
+	// leilei - load eyes
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/eyes.cfg", modelName );
+	if ( !CG_ParseEyesFile( filename, ci ) ) {
+		//	Com_Printf( "No eyes for %s\n", filename );
+		}
+	
+
 
 	if ( CG_FindClientHeadFile( filename, sizeof(filename), ci, teamName, headName, headSkinName, "icon", "skin" ) ) {
 		ci->modelIcon = trap_R_RegisterShaderNoMip( filename );
