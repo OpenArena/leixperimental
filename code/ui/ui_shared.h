@@ -309,6 +309,8 @@ typedef struct itemDef_s {
   int mapnum;			// leilei - assigned map number for this button's behavior
  int scralign;             	// leilei - alignment of ui element
  float scralignfactor;          // leilei - factor of adjustment
+ int viewsizemin;             	// leilei - hide this if viewsize 
+ int viewsizemax;             	// leilei - hide this if viewsize 
 } itemDef_t;
 
 typedef struct {

@@ -687,7 +687,7 @@ typedef struct {
 #define MAX_HEADNAME  32
 #define MAX_TEAMS 64
 #define MAX_GAMETYPES 16
-#define MAX_MAPS 128
+#define MAX_MAPS 4096	// leilei - was 128
 #define MAX_SPMAPS 45
 #define PLAYERS_PER_TEAM 5
 #define MAX_PINGREQUESTS		32

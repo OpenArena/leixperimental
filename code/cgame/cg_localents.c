@@ -215,6 +215,8 @@ CG_FragmentBounceSound
 ================
 */
 void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
+
+	float vol = 0.5f;
 	if ( le->leBounceSoundType == LEBS_BLOOD ) {
 		// half the gibs will make splat sounds
 		if ( rand() & 1 ) {
@@ -229,11 +231,12 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 				s = cgs.media.gibBounce3Sound;
 			}
 			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+			le->leBounceSoundType = LEBS_NONE;
 		}
 	} else if ( le->leBounceSoundType == LEBS_BRASS ) {
 		if ( cg_leiBrassNoise.integer ) {
 		// half the casings will make  casing sounds
-		if ( rand() & 1 ) {
+		//if ( rand() & 1 ) {
 			int r = rand()&3;
 			sfxHandle_t	s;
 
@@ -246,14 +249,14 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 			}
 			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
 			}
-		}
+		//}
 
 	} else if ( le->leBounceSoundType == LEBS_SHELL ) {
 		
 		if ( cg_leiBrassNoise.integer ) {
 			
 		// half the casings will make  casing sounds
-		if ( rand() & 1 ) {
+		//if ( rand() & 1 ) {
 			int r = rand()&3;
 			sfxHandle_t	s;
 
@@ -265,14 +268,14 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 				s = cgs.media.lshl3Sound;
 			}
 			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
-		}
+		//}
 		}
 
 	}
 
 	// don't allow a fragment to make multiple bounce sounds,
 	// or it gets too noisy as they settle
-	le->leBounceSoundType = LEBS_NONE;
+	//le->leBounceSoundType = LEBS_NONE;
 }
 
 

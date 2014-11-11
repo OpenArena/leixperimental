@@ -132,6 +132,7 @@ vmCvar_t	cg_footsteps;
 vmCvar_t	cg_addMarks;
 vmCvar_t	cg_brassTime;
 vmCvar_t	cg_viewsize;
+vmCvar_t	cg_viewnudge; // leilei
 vmCvar_t	cg_drawGun;
 vmCvar_t	cg_gun_frame;
 vmCvar_t	cg_gun_x;
@@ -229,6 +230,7 @@ vmCvar_t	cg_obeliskRespawnDelay;
 vmCvar_t	cg_enableDust;
 vmCvar_t	cg_enableBreath;
 vmCvar_t	cg_enableFS;
+vmCvar_t	cg_enableQ;
 
 //unlagged - client options
 vmCvar_t	cg_delag;
@@ -307,6 +309,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE },
 	{ &cg_fov, "cg_fov", "90", CVAR_ARCHIVE },
 	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
+	{ &cg_viewnudge, "cg_viewnudge", "0", CVAR_ARCHIVE },
 	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE  },
 	{ &cg_gibs, "cg_gibs", "1", CVAR_ARCHIVE  },
 	{ &cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE  },
@@ -399,6 +402,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
 #endif
 	{ &cg_enableFS, "g_enableFS", "0", CVAR_SERVERINFO},
+	{ &cg_enableQ, "g_enableQ", "0", CVAR_SERVERINFO},
 	{ &cg_enableDust, "g_enableDust", "0", CVAR_SERVERINFO},
 	{ &cg_enableBreath, "g_enableBreath", "0", CVAR_SERVERINFO},
 	{ &cg_obeliskRespawnDelay, "g_obeliskRespawnDelay", "10", CVAR_SERVERINFO},
@@ -1306,6 +1310,27 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.lmarkbullet3 = trap_R_RegisterShader("leibulletmark3" );	
 	cgs.media.lmarkbullet4 = trap_R_RegisterShader("leibulletmark4" );	
 
+	// New 'standard' Particle effect shaders
+
+	cgs.media.alfsmoke = trap_R_RegisterShader( "psmoke-blend" );
+	cgs.media.addsmoke = trap_R_RegisterShader( "psmoke-add" );
+	cgs.media.modsmoke = trap_R_RegisterShader( "psmoke-mod" );
+	cgs.media.subsmoke = trap_R_RegisterShader( "psmoke-sub" );
+
+	cgs.media.alfshock = trap_R_RegisterShader( "pshock-blend" );
+	cgs.media.addshock = trap_R_RegisterShader( "pshock-add" );
+	cgs.media.modshock = trap_R_RegisterShader( "pshock-mod" );
+	cgs.media.subshock = trap_R_RegisterShader( "pshock-sub" );
+
+	cgs.media.alfring = trap_R_RegisterShader( "pring-blend" );
+	cgs.media.addring = trap_R_RegisterShader( "pring-add" );
+	cgs.media.modring = trap_R_RegisterShader( "pring-mod" );
+	cgs.media.subring = trap_R_RegisterShader( "pring-sub" );
+
+	cgs.media.alfball = trap_R_RegisterShader( "pball-blend" );
+	cgs.media.addball = trap_R_RegisterShader( "pball-add" );
+	cgs.media.modball = trap_R_RegisterShader( "pball-mod" );
+	cgs.media.subball = trap_R_RegisterShader( "pball-sub" );
 
 	memset( cg_items, 0, sizeof( cg_items ) );
 	memset( cg_weapons, 0, sizeof( cg_weapons ) );

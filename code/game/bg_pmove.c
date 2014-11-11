@@ -48,6 +48,8 @@ float	pm_spectatorfriction = 5.0f;
 
 int		c_pmove = 0;
 
+extern int enableQ;
+extern	vmCvar_t	cg_enableQ;		// leilei - map changes player/weapons scale (for q1 adaptations)
 /*
 ===============
 PM_AddEvent
@@ -865,8 +867,11 @@ static void PM_NoclipMove( void ) {
 	vec3_t		wishdir;
 	float		wishspeed;
 	float		scale;
-
+	if (cg_enableQ.value)
+	pm->ps->viewheight = QUACK_VIEWHEIGHT;
+	else
 	pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+
 
 	// friction
 
@@ -1323,7 +1328,11 @@ static void PM_CheckDuck (void)
 	else
 	{
 		pm->maxs[2] = 32;
+		if (cg_enableQ.value)
+		pm->ps->viewheight = QUACK_VIEWHEIGHT;
+		else
 		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+
 	}
 }
 

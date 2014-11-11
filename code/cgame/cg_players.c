@@ -44,6 +44,8 @@ char	*cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {
 vec3_t headpos;
 vec3_t headang;
 
+int enableQ;
+
 /*
 ================
 CG_CustomSound
@@ -2682,18 +2684,6 @@ void CG_Player( centity_t *cent ) {
 
 	if (cg_leiChibi.integer > 0){
 
-
-		//	chibifactorhead = cg_leiChibi.value;
-		//	chibifactorbody = 1.0f - (cg_leiChibi.value - 1.3f * 1.3f);
-
-		//	chibifactorhead = chibifactorhead + (chibifactorbody / 2); 
-
-		//	if (chibifactorbody < 0.5) chibifactorbody = 0.5;
-		//	if (chibifactorbody > 1.2) chibifactorbody = 1.2;
-
-		//	if (chibifactorhead < 0.2) chibifactorhead = 0.2;
-		//	if (chibifactorhead > 4) chibifactorhead = 4;
-
 			if (cg_leiChibi.integer == 1){
 				// chibi SD proportion
 				chibifactortorso = 0.0f;
@@ -2724,6 +2714,7 @@ void CG_Player( centity_t *cent ) {
 	{
 		chibifactorbody = chibifactortorso = chibifactorhead = 0;	// normal scale...
 	}
+
 
 	// the client number is stored in clientNum.  It can't be derived
 	// from the entity number, because a single client may have
@@ -2800,6 +2791,14 @@ void CG_Player( centity_t *cent ) {
 	VectorScale( legs.axis[2], chibifactorbody, legs.axis[2] );
 	}
 
+
+	// leilei - q scale hack
+
+	if (cg_enableQ.integer) {
+	VectorScale( legs.axis[0], QUACK_SCALE, legs.axis[0] );
+	VectorScale( legs.axis[1], QUACK_SCALE, legs.axis[1] );
+	VectorScale( legs.axis[2], QUACK_SCALE, legs.axis[2] );
+	}
 
 
 	legs.shadowPlane = shadowPlane;
@@ -3131,6 +3130,8 @@ void CG_Player( centity_t *cent ) {
 	VectorScale( head.axis[1], chibifactorhead, head.axis[1] );
 	VectorScale( head.axis[2], chibifactorhead, head.axis[2] );
 	}
+
+
 
 	CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team, qfalse );
 

@@ -296,6 +296,7 @@ typedef struct localEntity_s {
 	leBounceSoundType_t	leBounceSoundType;
 
 	refEntity_t		refEntity;		
+	trajectory_t		avelocity;		// leilei - angle velocity
 } localEntity_t;
 
 //======================================================================
@@ -850,6 +851,32 @@ typedef struct {
 	qhandle_t	llightningsubbeam;
 	qhandle_t	llightningbeam;
 
+	// even more LEILEI shaders
+
+		// Smoke particles
+	qhandle_t	alfsmoke;
+	qhandle_t	addsmoke;
+	qhandle_t	modsmoke;
+	qhandle_t	subsmoke;
+
+		// Shockwave particles
+	qhandle_t	alfshock;
+	qhandle_t	addshock;
+	qhandle_t	modshock;
+	qhandle_t	subshock;
+	
+		// Ring particles (Railguns!)
+	qhandle_t	alfring;
+	qhandle_t	addring;
+	qhandle_t	modring;
+	qhandle_t	subring;
+
+		// Ball particles
+	qhandle_t	alfball;
+	qhandle_t	addball;
+	qhandle_t	modball;
+	qhandle_t	subball;
+
 //#ifdef MISSIONPACK
 	qhandle_t	nailPuffShader;
 	qhandle_t	blueProxMine;
@@ -1288,6 +1315,7 @@ extern	vmCvar_t		cg_gun_y;
 extern	vmCvar_t		cg_gun_z;
 extern	vmCvar_t		cg_drawGun;
 extern	vmCvar_t		cg_viewsize;
+extern	vmCvar_t		cg_viewnudge;	// leilei
 extern	vmCvar_t		cg_tracerChance;
 extern	vmCvar_t		cg_tracerWidth;
 extern	vmCvar_t		cg_tracerLength;
@@ -1372,7 +1400,8 @@ extern	vmCvar_t		cg_obeliskRespawnDelay;
 extern	vmCvar_t		cg_enableDust;
 extern	vmCvar_t		cg_enableBreath;
 
-extern	vmCvar_t		cg_enableFS;
+extern	vmCvar_t		cg_enableQ;		// leilei
+extern	vmCvar_t		cg_enableFS;		// leilei
 
 //unlagged - client options
 extern	vmCvar_t		cg_delag;
@@ -1664,6 +1693,13 @@ void    CG_LeiSparks (vec3_t org, vec3_t vel, int duration, float x, float y, fl
 void    CG_LeiSparks2 (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
 void    CG_LeiPuff (vec3_t org, vec3_t vel, int duration, float x, float y, float speed, float size);
 
+// QUAKE PARTICLE FUNCTION IMPORTS
+void CG_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);	// leilei - q particles
+void CG_QarticleExplosion (vec3_t org);						// leilei - q particles
+
+// LFX STANDARD PARTICLES (@@@TO BE MOVED TO CLIENT!!!!@@@)
+void CG_LFX_Smoke (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc);
+void CG_LFX_Shock (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc);
 
 //void    CG_LeiTrailer (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
 

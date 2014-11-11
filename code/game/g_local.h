@@ -69,6 +69,8 @@ typedef enum {
 
 #define SP_PODIUM_MODEL		"models/mapobjects/podium/podium4.md3"
 
+extern int enableq;
+
 //============================================================================
 
 typedef struct gentity_s gentity_t;
@@ -1045,7 +1047,8 @@ extern	vmCvar_t	g_singlePlayer;
 extern	vmCvar_t	g_redteam;
 extern	vmCvar_t	g_blueteam;
 #endif
-extern	vmCvar_t	g_enableFS;
+extern	vmCvar_t	g_enableFS;		// leilei - map makes player models load
+extern	vmCvar_t	cg_enableQ;		// leilei - map changes player/weapons scale (for q1 adaptations)
 extern	vmCvar_t	g_enableDust;
 extern	vmCvar_t	g_enableBreath;
 extern	vmCvar_t	g_proxMineTimeout;

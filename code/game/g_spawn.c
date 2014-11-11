@@ -641,6 +641,9 @@ void SP_worldspawn( void ) {
 	G_SpawnString( "enableBreath", "0", &s );
 	trap_Cvar_Set( "g_enableBreath", s );
 
+	G_SpawnString( "enableQ", "0", &s );
+	trap_Cvar_Set( "g_enableQ", s );
+
 	g_entities[ENTITYNUM_WORLD].s.number = ENTITYNUM_WORLD;
         g_entities[ENTITYNUM_WORLD].r.ownerNum = ENTITYNUM_NONE;
 	g_entities[ENTITYNUM_WORLD].classname = "worldspawn";

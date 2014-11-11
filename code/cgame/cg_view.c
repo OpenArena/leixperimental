@@ -181,6 +181,8 @@ Sets the coordinates of the rendered window
 */
 static void CG_CalcVrect (void) {
 	int		size;
+	int		size2;
+	int 		compensate;
 
 	// the intermission should allways be full screen
 	if ( cg.snap->ps.pm_type == PM_INTERMISSION ) {
@@ -190,13 +192,19 @@ static void CG_CalcVrect (void) {
 		if (cg_viewsize.integer < 30) {
 			trap_Cvar_Set ("cg_viewsize","30");
 			size = 30;
-		} else if (cg_viewsize.integer > 100) {
-			trap_Cvar_Set ("cg_viewsize","100");
-			size = 100;
+		} else if (cg_viewsize.integer > 120) {
+			trap_Cvar_Set ("cg_viewsize","120");	// leilei - increased to 120 for retro sbar disabling
+			size = 120;
 		} else {
 			size = cg_viewsize.integer;
 		}
 
+	}
+
+	size2 = size;
+	if (size>100){
+		compensate = size - 100;
+		size = 100;	// leilei - size should actually be normal...
 	}
 	cg.refdef.width = cgs.glconfig.vidWidth*size/100;
 	cg.refdef.width &= ~1;
@@ -206,6 +214,23 @@ static void CG_CalcVrect (void) {
 
 	cg.refdef.x = (cgs.glconfig.vidWidth - cg.refdef.width)/2;
 	cg.refdef.y = (cgs.glconfig.vidHeight - cg.refdef.height)/2;
+
+	// leilei - nudge
+		if (cg_viewnudge.integer) {
+			int nudged = 0;
+
+			if (size2 < 110)
+				nudged = 48;
+
+			else if (size2 < 120)
+				nudged = 24;
+
+
+				nudged = nudged * (cgs.glconfig.vidHeight / 480.0);
+
+				cg.refdef.y = ( cgs.glconfig.vidHeight  - cg.refdef.height) /2 - nudged;
+
+		}
 }
 
 //==============================================================================

@@ -48,6 +48,9 @@ static botSpawnQueue_t	botSpawnQueue[BOT_SPAWN_QUEUE_DEPTH];
 
 vmCvar_t bot_minplayers;
 
+vmCvar_t bot_minplayersTime;	// leilei 
+
+
 extern gentity_t	*podium1;
 extern gentity_t	*podium2;
 extern gentity_t	*podium3;
@@ -404,11 +407,14 @@ void G_CheckMinimumPlayers( void ) {
 
 	if (level.intermissiontime) return;
 	//only check once each 10 seconds
-	if (checkminimumplayers_time > level.time - 10000) {
+	//if (checkminimumplayers_time > level.time - 10000) {
+	if (checkminimumplayers_time > level.time - (1000 + (bot_minplayersTime.integer * 100))) { // leilei - faster time
+
 		return;
 	}
 	checkminimumplayers_time = level.time;
 	trap_Cvar_Update(&bot_minplayers);
+
 	minplayers = bot_minplayers.integer;
 	if (minplayers <= 0) return;
 
@@ -981,6 +987,10 @@ void G_InitBots( qboolean restart ) {
 	G_LoadArenas();
 
 	trap_Cvar_Register( &bot_minplayers, "bot_minplayers", "0", CVAR_SERVERINFO );
+
+
+	// leilei - additional ones
+	trap_Cvar_Register( &bot_minplayersTime, "bot_minplayersTime", "10", CVAR_SERVERINFO );
 
 	if( g_gametype.integer == GT_SINGLE_PLAYER ) {
 		trap_GetServerinfo( serverinfo, sizeof(serverinfo) );
