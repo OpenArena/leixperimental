@@ -2013,7 +2013,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 		max = Item_ListBox_MaxScroll(item);
 		if (item->window.flags & WINDOW_HORIZONTAL) {
 			viewmax = (item->window.rect.w / listPtr->elementWidth);
-			if ( key == K_LEFTARROW ) 
+			if ( key == K_LEFTARROW || key == K_JOY32) 
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos--;
@@ -2036,7 +2036,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 				}
 				return qtrue;
 			}
-			if ( key == K_RIGHTARROW ) 
+			if ( key == K_RIGHTARROW || key == K_JOY30 ) 
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos++;
@@ -2062,7 +2062,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 		}
 		else {
 			viewmax = (item->window.rect.h / listPtr->elementHeight);
-			if ( key == K_UPARROW ) 
+			if ( key == K_UPARROW || key == K_JOY29 ) 
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos--;
@@ -2085,7 +2085,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 				}
 				return qtrue;
 			}
-			if ( key == K_DOWNARROW ) 
+			if ( key == K_DOWNARROW || key == K_JOY31 ) 
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos++;
@@ -2233,7 +2233,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 qboolean Item_Checkbox_HandleKey(itemDef_t *item, int key) {
 
   if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+		if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 	    DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
 		  return qtrue;
 		}
@@ -2256,7 +2256,7 @@ qboolean Item_Combo_HandleKey(itemDef_t *item, int key) {
 	}
 	if(comboPtr->combopen) {
 		if (Rect_ContainsPoint(&comboPtr->ComboBox, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-			if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+			if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 				if(comboPtr->comboItem!=-1) {
 					multiDef_t *multiPtr = (multiDef_t*)item->multiData;
 					if(!multiPtr->strDef) {
@@ -2272,7 +2272,7 @@ qboolean Item_Combo_HandleKey(itemDef_t *item, int key) {
 			}
 		}
 	} else if (Rect_ContainsPoint(&Box, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+		if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 			multiDef_t *multiPtr = (multiDef_t*)item->multiData;
 			if (multiPtr) {
 				if(multiPtr->count>0)
@@ -2310,7 +2310,7 @@ qboolean Item_Combo_HandleKey(itemDef_t *item, int key) {
 qboolean Item_YesNo_HandleKey(itemDef_t *item, int key) {
 
   if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+		if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 	    DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
 		  return qtrue;
 		}
@@ -2384,7 +2384,7 @@ qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
 	multiDef_t *multiPtr = (multiDef_t*)item->typeData;
 	if (multiPtr) {
 	  if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-			if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+			if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 				int current = Item_Multi_FindCvarByValue(item) + 1;
 				int max = Item_Multi_CountSettings(item);
 				if ( current < 0 || current >= max ) {
@@ -2484,7 +2484,7 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key) {
 				return qtrue;
 			}
 
-			if ( key == K_RIGHTARROW ) 
+			if ( key == K_RIGHTARROW || key == K_JOY30 ) 
 			{
 				if (editPtr->maxPaintChars && item->cursorPos >= editPtr->maxPaintChars && item->cursorPos < len) {
 					item->cursorPos++;
@@ -2497,7 +2497,7 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key) {
 				return qtrue;
 			}
 
-			if ( key == K_LEFTARROW ) 
+			if ( key == K_LEFTARROW || key == K_JOY32 ) 
 			{
 				if ( item->cursorPos > 0 ) {
 					item->cursorPos--;
@@ -2528,21 +2528,21 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key) {
 			}
 		}
 
-		if (key == K_TAB || key == K_DOWNARROW ) {
+		if (key == K_TAB || key == K_DOWNARROW || key == K_JOY31 ) {
 			newItem = Menu_SetNextCursorItem(item->parent);
 			if (newItem && (newItem->type == ITEM_TYPE_EDITFIELD || newItem->type == ITEM_TYPE_NUMERICFIELD)) {
 				g_editItem = newItem;
 			}
 		}
 
-		if (key == K_UPARROW ) {
+		if (key == K_UPARROW || key == K_JOY29 ) {
 			newItem = Menu_SetPrevCursorItem(item->parent);
 			if (newItem && (newItem->type == ITEM_TYPE_EDITFIELD || newItem->type == ITEM_TYPE_NUMERICFIELD)) {
 				g_editItem = newItem;
 			}
 		}
 
-		if ( key == K_ENTER || key == K_KP_ENTER || key == K_ESCAPE)  {
+		if ( key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER || key == K_ESCAPE || key == K_JOY4)  {
 			return qfalse;
 		}
 
@@ -2711,7 +2711,7 @@ qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 	float x, value, width, work;
 
 	if (item->window.flags & WINDOW_HASFOCUS && item->cvar && Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory)) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+		if (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1 || key == K_MOUSE2 || key == K_MOUSE3) {
 			editFieldDef_t *editDef = item->typeData;
 			if (editDef) {
 				rectDef_t testRect;
@@ -3016,7 +3016,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 			g_editingField = qfalse;
 			g_editItem = NULL;
 			Display_MouseMove(NULL, DC->cursorx, DC->cursory);
-		} else if (key == K_TAB || key == K_UPARROW || key == K_DOWNARROW) {
+		} else if (key == K_TAB || key == K_UPARROW || key == K_JOY29 || key == K_JOY31 || key == K_DOWNARROW) {
 			return;
 		}
 	}
@@ -3076,8 +3076,19 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 		case K_UPARROW:
 			Menu_SetPrevCursorItem(menu);
 			break;
+		case K_JOY29:
+			Menu_SetPrevCursorItem(menu);
+			break;
 
 		case K_ESCAPE:
+			if (!g_waitingForKey && menu->onESC) {
+				itemDef_t it;
+		    it.parent = menu;
+			it.transitionEnd = menu->esctransitionEnd;
+		    Item_RunScript(&it, menu->onESC);
+			}
+			break;
+		case K_JOY4:
 			if (!g_waitingForKey && menu->onESC) {
 				itemDef_t it;
 		    it.parent = menu;
@@ -3089,7 +3100,9 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 		case K_DOWNARROW:
 			Menu_SetNextCursorItem(menu);
 			break;
-
+		case K_JOY31:
+			Menu_SetNextCursorItem(menu);
+			break;
 		case K_MOUSE1:
 		case K_MOUSE2:
 			if (item) {
@@ -3121,10 +3134,10 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 			}
 			break;
 
-		case K_JOY1:
-		case K_JOY2:
-		case K_JOY3:
-		case K_JOY4:
+//		case K_JOY1:
+//		case K_JOY2:
+//		case K_JOY3:
+//		case K_JOY4:
 		case K_AUX1:
 		case K_AUX2:
 		case K_AUX3:
@@ -4238,7 +4251,7 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 
 	if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && !g_waitingForKey)
 	{
-		if (down && (key == K_MOUSE1 || key == K_ENTER)) {
+		if (down && (key == K_MOUSE1 || key == K_ENTER || key == K_JOY1)) {
 	// Changed RD
 			if(item->bind2click) {
 				if(!item->clickstatus) {
@@ -4273,7 +4286,7 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 			case K_ESCAPE:
 				g_waitingForKey = qfalse;
 				return qtrue;
-	
+
 			case K_BACKSPACE:
 				id = BindingIDFromName(item->cvar);
 				if (id != -1) {
@@ -4978,6 +4991,8 @@ void Menu_ScrollFeeder(menuDef_t *menu, int feeder, qboolean down) {
     for (i = 0; i < menu->itemCount; i++) {
 			if (menu->items[i]->special == feeder) {
 				Item_ListBox_HandleKey(menu->items[i], (down) ? K_DOWNARROW : K_UPARROW, qtrue, qtrue);
+				Item_ListBox_HandleKey(menu->items[i], (down) ? K_JOY31 : K_JOY29, qtrue, qtrue); // leilei - gamepad support
+
 				return;
 			}
 		}

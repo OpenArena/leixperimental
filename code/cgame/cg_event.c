@@ -1344,9 +1344,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		colory3[0] = 0.0; colory3[1] = 0.5; colory3[2] = 0.8; colory3[3] = 0.7;
 		colory4[0] = 0.0; colory4[1] = 0.2; colory4[2] = 0.2; colory4[3] = 0.0;
 
-		CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 84, 0, colory, colory2, colory3, colory4, colory4, 32, 3600,54, 3);
-		CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 114, 0, colory, colory2, colory3, colory4, colory4, 22, 2600,54, 3);
-		CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 144, 0, colory, colory2, colory3, colory4, colory4, 12, 1600,54, 3);
+	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 84, 0, colory, colory2, colory3, colory4, colory4, 32, 3600,54, 3);
+	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 114, 0, colory, colory2, colory3, colory4, colory4, 22, 2600,54, 3);
+	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 144, 0, colory, colory2, colory3, colory4, colory4, 12, 1600,54, 3);
 		}
 
 		break;

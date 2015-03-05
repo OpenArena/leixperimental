@@ -3666,7 +3666,22 @@ void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
 		CG_LFX_Smoke (sprOrg, sprVel, 44, 0.7, colory, colory2, colory3, colory4, colory4, 3, 1200,3, 1);
 
 
+		// Sparks!
 
+		colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+		colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+		colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+		colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+		VectorMA( origin, 12, dir, sprOrg );
+		VectorScale( dir, 64, sprVel );
+
+		CG_LFX_Spark (sprOrg, sprVel, 175, 3, colory, colory2, colory3, colory4, colory4, 12, 1240, 0.8f, 1);
+
+	//	CG_LFX_Spark (sprOrg, sprVel, 175, 0.1f, colory, colory2, colory3, colory4, colory4, 5, 340, 7, 1);
+
+
+
+/*
 		// Aftersmoke
 		colory[0] = 0.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 0.0;
 		colory2[0] = 0.2; colory2[1] = 0.2; colory2[2] = 0.2; colory2[3] = 0.2;
@@ -3676,7 +3691,7 @@ void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
 		CG_LFX_Smoke (sprOrg, sprVel, 4, 0.2, colory, colory2, colory3, colory4, colory4, 144, 5500,24, 3);
 		CG_LFX_Smoke (sprOrg, sprVel, 9, 0.2, colory, colory2, colory3, colory4, colory4, 44, 3500,24, 3);
 		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 24, 1500,24, 3);
-
+*/
 }
 
 
@@ -3774,6 +3789,15 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		}
 		mark = cgs.media.holeMarkShader;
 		radius = 12;
+		// Sparks
+//				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+//				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+//				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+//				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+//				VectorMA( origin, 1, dir, sprOrg );
+//				VectorScale( dir, 1, sprVel );
+//				CG_LFX_Spark (sprOrg, sprVel, 25, 25, colory, colory2, colory3, colory4, colory4, 5, 540, 0.5f, 1);
+
 		break;
 //#ifdef MISSIONPACK
 	case WP_PROX_LAUNCHER:
@@ -3933,7 +3957,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		}
 
 
-		if (cg_leiEnhancement.integer) {
+		if (cg_leiEnhancement.integer == 1) {
 		// some more fireball, fireball, fireball, fire fire!
 		VectorMA( origin, 24, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
@@ -3967,7 +3991,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		sfx = cgs.media.sfx_plasmaexp;
 		mark = cgs.media.energyMarkShader;
 		radius = 24;
-			if (cg_leiEnhancement.integer == 2000) {
+			if (cg_leiEnhancement.integer == 2000 || cg_leiEnhancement.integer == 1999) {
 		
 				vec4_t colory, colory2, colory3, colory4;
 
@@ -3981,11 +4005,51 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				VectorMA( origin, 4, dir, sprOrg );
 				VectorScale( dir, 64, sprVel );
 		
-				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 1200, 150,1);
-				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 1000, 110,1);
-				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 900, 100,1);
-				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 600, 90,1);
-				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 300, 50,1);
+		//		CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 1200, 150,1);
+		//		CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 1000, 110,1);
+		//		CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 900, 100,1);
+		//		CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 600, 90,1);
+		//		CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 300, 50,1);
+
+		//	CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 400, 160,1);
+
+		//	CG_LFX_Smoke (origin, dir, 52, 0.1, colory, colory2, colory3, colory4, colory4, 21, 280, 1);
+
+		// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.0; colory4[1] = 0.00; colory4[2] = 0.0; colory4[3] = 0.0;
+
+				// TODO: Railgun color apply
+
+				//VectorCopy( cgs.clientinfo[ cent->currentState.clientNum ].color1, colory );
+				
+				if (cg_oldRail.integer < 1)
+				VectorCopy( cgs.clientinfo[clientNum].color2, colory );	// prevent freaking copy crash
+				else
+				VectorCopy( cgs.clientinfo[clientNum].color1, colory );
+
+
+				{
+				int eah;
+				for (eah=0;eah<3;eah++){
+				colory2[eah] = colory[eah] * 0.8f;
+				colory3[eah] = colory[eah] * 0.4f;
+				}
+				}		
+
+			
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				
+				CG_LFX_Shock (origin, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 400, 160,1);
+
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 85, 75, colory, colory2, colory3, colory4, colory4, 15, 940, 0.9f, 1);
+				CG_LFX_Spark (sprOrg, sprVel, 85, 45, colory, colory2, colory3, colory4, colory4, 5, 140, 5, 1);
+				CG_LFX_Spark (sprOrg, sprVel, -45, 75, colory, colory2, colory3, colory4, colory4, 3, 80, 7, 1);
+
 					break;
 			}
 
@@ -4102,7 +4166,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		}
 		break;
 	case WP_SHOTGUN:
-	if (cg_leiEnhancement.integer == 2000) 
+	if (cg_leiEnhancement.integer == 1999) 
 		{
 
 		vec4_t colory, colory2, colory3, colory4;	
@@ -4110,7 +4174,41 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		shader = cgs.media.bulletExplosionShader;
 		mark = cgs.media.bulletMarkShader;
 		light = 0;
-		radius = 1;
+		radius = 4;
+		duration = 10;	// bit more instant
+
+		colory[0] = 0.5; colory[1] = 0.4; colory[2] = 0.4; colory[3] = 0.0;
+		colory2[0] = 0.2; colory2[1] = 0.2; colory2[2] = 0.2; colory2[3] = 0.5;
+		colory3[0] = 0.1; colory3[1] = 0.1; colory3[2] = 0.1; colory3[3] = 0.8;
+		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+			VectorMA( origin, 4, dir, sprOrg );
+		VectorScale( dir, 1, sprVel );
+	
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 1);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 1);
+
+			// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 25, 85, colory, colory2, colory3, colory4, colory4, 3, 540, 0.8f, 1);
+
+
+
+					break;
+		}
+	else if (cg_leiEnhancement.integer == 2000) 
+		{
+
+		vec4_t colory, colory2, colory3, colory4;	
+		mod = cgs.media.bulletFlashModel;
+		shader = cgs.media.bulletExplosionShader;
+		mark = cgs.media.bulletMarkShader;
+		light = 0;
+		radius = 4;
 		duration = 10;	// bit more instant
 
 		colory[0] = 0.7; colory[1] = 0.7; colory[2] = 0.7; colory[3] = 0.0;
@@ -4122,9 +4220,13 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorScale( dir, 1, sprVel );
 		
 		//CG_LFX_Smoke (sprOrg, sprVel, 62, 5, colory, colory2, colory3, colory4, colory4, 4, 1200,4, 1);
-		CG_LFX_Smoke (sprOrg, sprVel, 3, 35, colory, colory2, colory3, colory4, colory4, 50, 1700,26, 0);
+		//CG_LFX_Smoke (sprOrg, sprVel, 3, 35, colory, colory2, colory3, colory4, colory4, 50, 1700,26, 0);
 		//CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 700, 24, 0);
 
+
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
 			// shockwave 
 		
 				colory[0] = 0.9; colory[1] = 0.8; colory[2] = 1.0; colory[3] = 1.0;
@@ -4135,6 +4237,18 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				VectorScale( dir, 64, sprVel );
 	
 				CG_LFX_Shock (origin, dir, 0, 32, colory, colory2, colory3, colory4, colory4, 1, 200, 50,1);
+
+			// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 25, 85, colory, colory2, colory3, colory4, colory4, 5, 5540, 0.5f, 1);
+
+
+
 					break;
 		}
 
@@ -4244,13 +4358,57 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		break;
 //#endif
 
+
+	// Shared with Vulcan/Chaingun
 	case WP_MACHINEGUN:
 		mod = cgs.media.bulletFlashModel;
 		shader = cgs.media.bulletExplosionShader;
 		mark = cgs.media.bulletMarkShader;
-	if (cg_leiEnhancement.integer == 2000) 
+	if (cg_leiEnhancement.integer == 1999) 	// like 2000, but with additive blending preferred
 		{
+		vec4_t colory, colory2, colory3, colory4;	
+		colory[0] = 0.5; colory[1] = 0.4; colory[2] = 0.4; colory[3] = 0.0;
+		colory2[0] = 0.2; colory2[1] = 0.2; colory2[2] = 0.2; colory2[3] = 0.5;
+		colory3[0] = 0.1; colory3[1] = 0.1; colory3[2] = 0.1; colory3[3] = 0.8;
+		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+	
+		VectorMA( origin, 4, dir, sprOrg );
+		VectorScale( dir, 1, sprVel );
+		duration = 10;	// bit more instant
+		radius = 1;
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 1);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 65+ (random()*56), colory, colory2, colory3, colory4, colory4, 3, 100 + (random()*200), 3, 8+ (random()*12), 1);
+	
 
+			// shockwave 
+		
+				colory[0] = 0.9; colory[1] = 0.8; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 0.7; colory2[1] = 0.5; colory2[2] = 0.2; colory2[3] = 0.9;
+				colory3[0] = 0.1; colory3[1] = 0.1; colory3[2] = 0.1; colory3[3] = 0.7;
+				colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+
+
+				VectorMA( origin, 4, dir, sprOrg );
+				VectorScale( dir, 64, sprVel );
+	
+				CG_LFX_Shock (origin, dir, 0, 32, colory, colory2, colory3, colory4, colory4, 1, 200, 40,1);
+
+
+			// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 25, 285, colory, colory2, colory3, colory4, colory4, 5, 190, 0.9f, 1);
+
+					break;
+		}
+
+
+	else if (cg_leiEnhancement.integer == 2000) 
+		{
 		vec4_t colory, colory2, colory3, colory4;	
 		colory[0] = 0.7; colory[1] = 0.7; colory[2] = 0.7; colory[3] = 0.0;
 		colory2[0] = 0.7; colory2[1] = 0.7; colory2[2] = 0.7; colory2[3] = 0.5;
@@ -4260,8 +4418,12 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorMA( origin, 4, dir, sprOrg );
 		VectorScale( dir, 1, sprVel );
 			duration = 10;	// bit more instant
+			radius = 1;
+		//CG_LFX_Smoke (sprOrg, sprVel, 3, 85, colory, colory2, colory3, colory4, colory4, 50, 1200,12, 0);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+
+CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 65+ (random()*56), colory, colory2, colory3, colory4, colory4, 3, 100 + (random()*200), 3, 8+ (random()*12), 0);
 	
-		CG_LFX_Smoke (sprOrg, sprVel, 3, 85, colory, colory2, colory3, colory4, colory4, 50, 1200,12, 0);
 
 			// shockwave 
 		
@@ -4273,9 +4435,25 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				VectorScale( dir, 64, sprVel );
 	
 				CG_LFX_Shock (origin, dir, 0, 32, colory, colory2, colory3, colory4, colory4, 1, 200, 40,1);
+
+
+			// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 25, 285, colory, colory2, colory3, colory4, colory4, 12, 240, 0.5f, 1);
+
+
+				CG_LFX_Spark (sprOrg, sprVel, 25, 385, colory, colory2, colory3, colory4, colory4, 3, 50, 4, 1);
 					break;
+
+
+
 		}
-		if (cg_leiEnhancement.integer == 1996) {	// leilei - q effects
+		else if (cg_leiEnhancement.integer == 1996) {	// leilei - q effects
 		light = 0;
 		radius = 1;
 		duration = 1;	// bit more instant
@@ -4369,12 +4547,24 @@ CG_MissileHitPlayer
 */
 void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum ) {
 // LEILEI ENHANCEMENT
-	if (cg_leiEnhancement.integer) {
+	if (cg_leiEnhancement.integer == 1) {
 		CG_SmokePuff( origin, dir, 22, 1, 1, 1, 1.0f, 900, cg.time, 0, 0,  cgs.media.lbldShader1 );
 		CG_SpurtBlood( origin, dir, 1);
 //		CG_SpurtBlood( origin, dir, 4);
 //		CG_SpurtBlood( origin, dir, -12);
 		}
+
+	if (cg_leiEnhancement.integer == 2000 || cg_leiEnhancement.integer == 1999) {
+		vec4_t colory, colory2, colory3, colory4;
+		// do some sparky blood fx
+		colory[0] = 1.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 1.0;
+		colory2[0] = 1.0; colory2[1] = 0.0; colory2[2] = 0.0; colory2[3] = 1.0;
+		colory3[0] = 1.0; colory3[1] = 0.0; colory3[2] = 0.0; colory3[3] = 1.0;
+		colory4[0] = 1.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 1.0;
+
+		CG_LFX_Spark (origin, dir, 175, 21, colory, colory2, colory3, colory4, colory4, 10, 1240, 1.3f, 666);
+		}
+
 
 	else
 	CG_Bleed( origin, entityNum );
@@ -4594,7 +4784,7 @@ void CG_ShotgunFire( entityState_t *es ) {
 		if ( !( contents & CONTENTS_WATER ) ) {
 			VectorSet( up, 0, 0, 8 );
 // LEILEI ENHANCEMENT
-				if (cg_leiEnhancement.integer) {
+				if (cg_leiEnhancement.integer == 1) {
 				// Shotgun puffy
 			//		CG_LeiSparks(v, forward, 200, 0, 0, 7);
 			//		CG_LeiSparks(v, forward, 200, 0, 0, 7);
@@ -4794,7 +4984,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 
 
 // LEILEI ENHANCEMENT
-				if (cg_leiEnhancement.integer) {
+				if (cg_leiEnhancement.integer == 1) {
 				// Water Splash
 					VectorCopy( trace.plane.normal, kapow );
 					kapow[0] = kapow[0] * (crandom() * 22);
@@ -4816,7 +5006,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				CG_BubbleTrail( trace.endpos, end, 32 );
 
 // LEILEI ENHANCEMENT
-				if (cg_leiEnhancement.integer) {
+				if (cg_leiEnhancement.integer == 1) {
 				// Water Splash
 					VectorCopy( trace.plane.normal, kapow );
 					
@@ -4841,7 +5031,8 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 	// impact splash and mark
 	if ( flesh ) {
 // LEILEI ENHANCEMENT
-	if (cg_leiEnhancement.integer) {
+	/*
+	if (cg_leiEnhancement.integer == 1) {
 
 		
 						// Blood Hack
@@ -4855,31 +5046,37 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				kapew[0] = kapew[0] * (crandom() * 2 + 37);
 				kapew[1] = kapew[1] * (crandom() * 2 + 37);
 				kapew[2] = kapew[2] * (crandom() * 2 + 37);
-	//	CG_LeiBlood2(end, kapow, 500, 0, 0, 94, 0.6);
-	//	CG_LeiBlood2(end, kapew, 800, 0, 0, 54, 0.5);
-	//	CG_LeiBlood2(end, kapow, 1200, 0, 0, 24, 1);
-	//	CG_LeiBlood2(end, kapow, 1500, 0, 0, 24, 1.2);
-	//	CG_LeiBlood2(end, kapow, 1200, 0, 0, 14, 1.7);
-
-
 
 		CG_SmokePuff( end, kapow, 6, 1, 1, 1, 1.0f, 600, cg.time, 0, 0,  cgs.media.lbldShader1 );
 		CG_SpurtBlood( end, kapow, 2);
 		CG_SpurtBlood( end, kapew, 1);
 
-	//	CG_SpurtBlood2( end, kapew, cg_leiDebug.integer, 1, 400);
-	//	CG_SpurtBlood2( end, kapew, 41, 1, 700);
-		//CG_Particle_Bleed(cgs.media.lbldShader1,kapew,'0 0 0', 0, 100);
-//		CG_Particle_Bleed(cgs.media.lbldShader1,kapew,kapow, 0, 100);
-//		CG_Particle_BloodCloud(self,end,'0 0 0');
+		}
+	*/
 
 if (cg_leiSuperGoreyAwesome.integer) {
-		//CG_SpurtBlood( end, kapow, -2);
-			}
-		}
 
+		//CG_SpurtBlood( end, kapow, -2);
+		 
+		vec4_t colory, colory2, colory3, colory4;
+		// do some sparky blood fx
+		vec3_t reversenormal;
+		reversenormal[0] = normal[0] * -1;
+		reversenormal[1] = normal[1] * -1;
+		reversenormal[2] = normal[2] * -1;
+		colory[0] = 1.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 1.0;
+		colory2[0] = 1.0; colory2[1] = 0.0; colory2[2] = 0.0; colory2[3] = 1.0;
+		colory3[0] = 1.0; colory3[1] = 0.0; colory3[2] = 0.0; colory3[3] = 1.0;
+		colory4[0] = 1.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 1.0;
+
+		CG_LFX_Spark (end, normal, 175, 11, colory, colory2, colory3, colory4, colory4, 5, 1240, 1.1f, 666);
+		CG_LFX_Spark (end, reversenormal, 15, 155, colory, colory2, colory3, colory4, colory4, 7, 1240, 1.3f, 666);
+
+			
+		}
 	else
 		CG_Bleed( end, fleshEntityNum );
+
 	} else {
 		CG_MissileHitWall( WP_MACHINEGUN, 0, end, normal, IMPACTSOUND_DEFAULT );
 
@@ -4891,7 +5088,7 @@ if (cg_leiSuperGoreyAwesome.integer) {
 
 						}
 // LEILEI ENHANCEMENT
-				else if (cg_leiEnhancement.integer) {
+				else if (cg_leiEnhancement.integer == 1) {
 
 				// Smoke puff
 					VectorCopy( normal, kapow );

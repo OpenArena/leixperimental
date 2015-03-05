@@ -155,8 +155,8 @@ void CG_ImpactMark( qhandle_t markShader, const vec3_t origin, const vec3_t dir,
 	// create the texture axis
 	VectorNormalize2( dir, axis[0] );
 	PerpendicularVector( axis[1], axis[0] );
-	if (cg_leiEnhancement.integer) // LEILEI HACK HACK HACK - don't spin atlas variated particles (for consistent lighting on the texture)
-	orientation = 90; 
+	//if (cg_leiEnhancement.integer) // LEILEI HACK HACK HACK - don't spin atlas variated particles (for consistent lighting on the texture)
+	//orientation = 90; 
 	
 	RotatePointAroundVector( axis[2], axis[0], axis[1], orientation );
 	CrossProduct( axis[0], axis[2], axis[1] );
@@ -351,7 +351,9 @@ typedef struct particle_s
 	qboolean	qarticle;	// is a quake style particle
 
 	vec4_t		cols[5];	// fading color cycle
+	vec3_t		stretchorg;	// old origin to stretch from
 	vec3_t		dir;		// angle, direction
+	float		bounce;		// how much elasticity does it have
 } cparticle_t;
 
 // more quake stuff
@@ -734,6 +736,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 	polyVert_t	TRIverts[3];
 	vec3_t		rright2, rup2;
 	vec3_t		oldorg;
+	vec3_t		stretchorg;
   	float frametime;
 
 	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY
@@ -1453,6 +1456,133 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				verts[3].modulate[3] = 255 * invratio;
 
 		}
+		else if (p->color == GREY75)
+		{	// STRETCHY SPARK sprite
+				vec3_t	argles;
+				vec3_t		forward, right, up;
+				vec3_t		fwd, rite;
+				vec3_t		line;
+				float		len, begin, end;
+				vec3_t		start, finish;
+
+				vec3_t oldorgstretch;
+				vectoangles( p->dir, argles );
+				AngleVectors ( argles, NULL, right, up);
+
+			// Set up the 'beam'
+
+		//		oldorgstretch[0] = org[0] - ((oldorg[0] - org[0]) * 74);
+		//		oldorgstretch[1] = org[1] - ((oldorg[1] - org[1]) * 74);	// TODO: velocity stretch? Time stretch?
+			//	oldorgstretch[2] = org[2] - ((oldorg[2] - org[2]) * 74);
+
+//				oldorgstretch[0] = org[0] - ((p->stretchorg[0] - org[0]) * 4);
+//				oldorgstretch[1] = org[1] - ((p->stretchorg[1] - org[1]) * 4);	// TODO: velocity stretch? Time stretch?
+//				oldorgstretch[2] = org[2] - ((p->stretchorg[2] - org[2]) * 4);
+
+			//	oldorgstretch[0] = org[0] - ((org[0] - p->stretchorg[0]));
+			//	oldorgstretch[1] = org[1] - ((org[1] - p->stretchorg[1]));	// TODO: velocity stretch? Time stretch?
+			//	oldorgstretch[2] = org[2] - ((org[2] - p->stretchorg[2]));
+
+			//	oldorgstretch[0] = p->org[0] - ((p->vel[0]*time) * 0.001f);// + p->accel[0]*time2;
+			//	oldorgstretch[1] = p->org[1] - ((p->vel[1]*time) * 0.001f);// + p->accel[1]*time2;
+			//	oldorgstretch[2] = p->org[2] - ((p->vel[2]*time) * 0.001f);// + p->accel[2]*time2;
+
+			//	oldorgstretch[0] = org[0] + ((p->vel[0]*time) + (p->accel[0]*time));
+			//	oldorgstretch[1] = org[1] + ((p->vel[1]*time) + (p->accel[1]*time));
+			//	oldorgstretch[2] = org[2] + ((p->vel[2]*time) + (p->accel[2]*time));
+				
+				VectorCopy(p->stretchorg, oldorgstretch);
+
+				//VectorSubtract( oldorgstretch, p->stretchorg, fwd );
+				VectorSubtract( org, oldorgstretch, fwd );
+				//VectorSubtract( p->stretchorg, p->org, fwd );
+
+
+				len = VectorNormalize( fwd );
+
+
+				len *= p->height + p->width;
+
+				len *= -1;
+		//if (len < 1) len = 1; // always be some length
+
+				begin = 0;
+				end = len;
+		
+
+
+			// Set up the particle
+
+				width = p->width + ( ratio * ( p->endwidth - p->width) );
+				height = p->height + ( ratio * ( p->endheight - p->height) );
+		
+		//		if (p->roll) {
+		//			vectoangles( p->dir, rotate_ang );
+		//			rotate_ang[ROLL] += p->roll;
+		//			AngleVectors ( rotate_ang, NULL, right, up);
+		//		}
+		
+		
+
+			//	VectorMA( oldorgstretch, begin, forward, point );
+			//	VectorMA( point, end, forward, point );
+
+
+				VectorMA( org, begin, fwd, start );
+				VectorMA( org, end, fwd, finish );
+
+				line[0] = DotProduct( fwd, cg.refdef.viewaxis[1] );
+				line[1] = DotProduct( fwd, cg.refdef.viewaxis[2] );
+				VectorScale( cg.refdef.viewaxis[1], line[1], right );
+				VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+				VectorNormalize( right );
+
+			//	VectorMA (org, -height, right, point);	
+			//	VectorMA (point, -width, up, point);	
+
+				//VectorCopy (point, verts[0].xyz);
+				VectorMA( finish, width, right, verts[0].xyz );	
+				verts[0].st[0] = 0;	
+				verts[0].st[1] = 0;	
+				verts[0].modulate[0] = 255 * color[0];	
+				verts[0].modulate[1] = 255 * color[1];	
+				verts[0].modulate[2] = 255 * color[2];	
+				verts[0].modulate[3] = 255 * invratio;
+		
+
+				//VectorMA (point, 2*height, up, point);	
+				VectorMA( finish, -width, right, verts[1].xyz );	
+				//VectorCopy (point, verts[1].xyz);	
+				verts[1].st[0] = 0;	
+				verts[1].st[1] = 1;	
+				verts[1].modulate[0] = 255 * color[0];	
+				verts[1].modulate[1] = 255 * color[1];	
+				verts[1].modulate[2] = 255 * color[2];	
+				verts[1].modulate[3] = 255 * invratio;
+		
+	
+				//VectorMA (point, 2*width, right, point);
+				VectorMA( start, -width, right, verts[2].xyz );	
+				//VectorCopy (point, verts[2].xyz);	
+				verts[2].st[0] = 1;	
+				verts[2].st[1] = 1;	
+				verts[2].modulate[0] = 255 * color[0];	
+				verts[2].modulate[1] = 255 * color[1];	
+				verts[2].modulate[2] = 255 * color[2];	
+				verts[2].modulate[3] = 255 * invratio;
+		
+	
+				//VectorMA (point, -2*height, up, point);	
+				VectorMA( start, width, right, verts[3].xyz );	
+				//VectorCopy (point, verts[3].xyz);	
+				verts[3].st[0] = 1;	
+				verts[3].st[1] = 0;	
+				verts[3].modulate[0] = 255 * color[0];	
+				verts[3].modulate[1] = 255 * color[1];	
+				verts[3].modulate[2] = 255 * color[2];	
+				verts[3].modulate[3] = 255 * invratio;
+
+		}
 		else
 			// VP PARALLEL sprite
 		{
@@ -1944,6 +2074,8 @@ static float roll = 0.0;
 CG_AddParticles
 ===============
 */
+
+void CG_LightningHalo( vec3_t source, vec3_t dest );
 void CG_AddParticles (void)
 {
 	cparticle_t		*p, *next;
@@ -1958,6 +2090,7 @@ void CG_AddParticles (void)
 	int				type;
 	vec3_t			rotate_ang;
 	vec3_t			colar;
+	vec3_t			africt;	
 
 	if (!initparticles)
 		CG_ClearParticles ();
@@ -1983,6 +2116,7 @@ void CG_AddParticles (void)
 
 		time = (cg.time - p->time)*0.001;
 		VectorCopy(p->org, oldorg);
+		//VectorCopy(p->org, p->stretchorg);
 
 		alpha = p->alpha + time*p->alphavel;
 		if (alpha <= 0)
@@ -2030,6 +2164,8 @@ void CG_AddParticles (void)
 				p->cols[2][4] = 0;	
 				p->cols[3][4] = 0;	
 				p->qarticle = 0;
+				p->airfriction = 0;
+				p->bounce = 0;
 				continue;
 			}
 
@@ -2127,6 +2263,7 @@ void CG_AddParticles (void)
 
 		time2 = time*time;
 
+
 	//	p->vel[0] -= p->airfriction; // leilei - air friction
 	//	p->vel[1] -= p->airfriction; // leilei - air friction
 	//	p->vel[2] -= p->airfriction; // leilei - air friction
@@ -2151,13 +2288,30 @@ void CG_AddParticles (void)
 		org[2] = p->org[2] + p->vel[2]*time + p->accel[2]*time2;
 
 */
+
+
+//		p->vel[0] = p->vel[0] * (1 + (africt[0]));	
+//		p->vel[1] = p->vel[1] * (1 + (africt[1]));	
+//		p->vel[2] = p->vel[2] * (1 + (africt[2]));	
+
 		oldorg[0] = p->org[0] - p->vel[0]*time + p->accel[0]*time2;
 		oldorg[1] = p->org[1] - p->vel[1]*time + p->accel[1]*time2;
 		oldorg[2] = p->org[2] - p->vel[2]*time + p->accel[2]*time2;
 
+
+
+
 		org[0] = p->org[0] + p->vel[0]*time + p->accel[0]*time2;
 		org[1] = p->org[1] + p->vel[1]*time + p->accel[1]*time2;
 		org[2] = p->org[2] + p->vel[2]*time + p->accel[2]*time2;
+
+
+		p->stretchorg[0] = p->org[0] + ((p->vel[0]*time + p->accel[0]*time2) * 1.2f);
+		p->stretchorg[1] = p->org[1] + ((p->vel[1]*time + p->accel[1]*time2) * 1.2f);
+		p->stretchorg[2] = p->org[2] + ((p->vel[2]*time + p->accel[2]*time2) * 1.2f);
+
+	
+
 
 		//VectorSubtract(org, p->org, diffed);
 
@@ -2165,6 +2319,7 @@ void CG_AddParticles (void)
 		diffed[1] = p->vel[1] + p->accel[1];
 		diffed[2] = p->vel[2] + p->accel[2];
 
+		
 
 
 		type = p->type;
@@ -2185,6 +2340,102 @@ void CG_AddParticles (void)
 		p->dest[2] = org[2] + p->vel[2]*time + p->accel[2]*time2;
 
 
+
+	// leilei - bounce physics
+		if(p->bounce > 0)
+		{
+			trace_t	trace;
+//			VectorMA (x_pos, y, up, this_pos);
+//			VectorMA (this_pos, -EXTRUDE_DIST*2, normal, end_pos);
+			
+			CG_Trace (&trace, org, NULL, NULL, p->stretchorg, -1, CONTENTS_SOLID);
+			
+			if (!(trace.entityNum < (MAX_ENTITIES - 1))) // may only land on world
+			{
+		//!trace.startsolid
+
+				if (trace.fraction < 1){	// yes it has hit a thing!
+					float	dot;	
+					vec3_t fromorgvel;
+					vec3_t govel;
+					vec3_t invtrace;
+	
+					//vectorCopy(trace.plane.normal, p->vel);
+				//	CG_Printf (" %f %f %f\n", p->vel[0], p->vel[1], p->vel[2]);
+
+
+					p->vel[0] *= time;
+					p->vel[1] *= time;
+					p->vel[2] *= time;
+					p->accel[0] *= time2;
+					p->accel[1] *= time2;
+					p->accel[2] *= time2;
+
+					VectorCopy(p->org, fromorgvel);
+
+					VectorSubtract(fromorgvel, p->vel, fromorgvel);
+
+					VectorAdd(org, p->vel, p->org);
+					VectorAdd(org, p->accel, p->org);
+	
+					VectorCopy(p->org, org);
+
+					p->vel[0] = 0;
+					p->vel[1] = 0;
+					p->vel[2] = 0;
+
+					p->accel[0] = 0;
+					p->accel[1] = 0;
+					p->accel[2] = 0;
+					p->accel[2] = -(PARTICLE_GRAVITY * 6);
+
+				//	VectorCopy(trace.plane.normal, govel);
+				//	VectorAdd(govel, fromorgvel, govel);
+				//	govel[0] *= 233;
+				//	govel[1] *= 233;
+				//	govel[2] *= 233;
+
+				//	VectorAdd( p->vel, govel, p->vel );
+
+					VectorCopy(trace.plane.normal, invtrace);
+					invtrace[0] *= -1;
+					invtrace[1] *= -1;
+					invtrace[2] *= -1;
+
+					VectorCopy(fromorgvel, p->vel);
+
+					p->vel[0] *= invtrace[0];
+					p->vel[1] *= invtrace[1];
+					p->vel[2] *= invtrace[2];
+	
+					p->vel[0] *= p->bounce;
+					p->vel[1] *= p->bounce;
+					p->vel[2] *= p->bounce;
+		
+				//	dot = DotProduct( fromorgvel, trace.plane.normal );
+				//	VectorMA( p->vel, -2*dot, trace.plane.normal, p->vel );
+				//	if(dot)
+				//	CG_Printf ("bonk %f, %f %f %f\n", dot, p->vel[0], p->vel[1], p->vel[2]);
+
+				//	VectorCopy(trace.endpos, org);
+
+				//	CG_LightningHalo( org, p->org );
+
+					if (p->bounce == 666) // blood
+					{
+						if (crandom() > 0.82f)
+						  CG_ImpactMark( cgs.media.bloodMarkShader, trace.endpos, trace.plane.normal, random()*360,1,1,1, p->alpha, qtrue, 15, qfalse );
+						//CG_ImpactMark( cgs.media.bloodMarkShader, org, 	org, random()*360, 1,1,1,1, 1, p->width + 14, qfalse );
+						//p->time = -1; // done!
+					}
+				//	else if (p->bounce == 0) // none at all so delete it
+				//	p->time = 0;
+					}
+					//p->width = 5; // biggen test
+
+			}
+
+		}
 
 		
 
@@ -3435,7 +3686,7 @@ void CG_LeiSparks (vec3_t org, vec3_t vel, int duration, float x, float y, float
 
 		p->accel[0] = 0;
 		p->accel[1] = 0;
-		p->accel[2] = -PARTICLE_GRAVITY * 5;
+		p->accel[2] = -PARTICLE_GRAVITY * 8;
 
 
 //		p->accel[0] = crandom()*6;
@@ -3699,7 +3950,97 @@ void CG_LFX_Smoke (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 
 
 
+void CG_LFX_Smoke2 (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scale, float scaleup, int blendfunc)
+{
+	int i, j;
+	int cont = 50;
+	cparticle_t	*p;
 
+	cont = count;
+
+    for (i = 0; i < cont; i++) {
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+	p->time = cg.time;
+	
+	p->endtime = cg.time + duration;
+	p->startfade = cg.time;
+	
+	p->color = EMISIVEFADE;
+	p->alpha = 0.1f;
+	p->alphavel = 0.0f;
+	p->height = p->width = (1.0 * scale);
+
+	p->endheight = p->height + scaleup;
+	p->endwidth = p->width + scaleup;
+
+
+	// Manage random roll and 
+	p->rotate = qtrue;
+	p->roll = crandom()*179;
+	
+	p->accel[0] = 0;
+	p->accel[1] = 0;
+	p->accel[2] = 0;
+
+	p->cols[0][0] = color1[0]; 
+	p->cols[1][0] = color1[1];
+	p->cols[2][0] = color1[2];
+	p->cols[3][0] = color1[3];
+
+	p->cols[0][1] = color2[0]; 
+	p->cols[1][1] = color2[1];
+	p->cols[2][1] = color2[2];
+	p->cols[3][1] = color2[3];
+
+	p->cols[0][2] = color3[0]; 
+	p->cols[1][2] = color3[1];
+	p->cols[2][2] = color3[2];
+	p->cols[3][2] = color3[3];
+
+	p->cols[0][3] = color4[0]; 
+	p->cols[1][3] = color4[1];
+	p->cols[2][3] = color4[2];
+	p->cols[3][3] = color4[3];
+
+	p->cols[0][4] = color5[0]; 
+	p->cols[1][4] = color5[1];
+	p->cols[2][4] = color5[2];
+	p->cols[3][4] = color5[3];
+
+
+	// Manage blending Functions
+	if (blendfunc == 1)
+	p->pshader = cgs.media.addsmoke;
+	else if (blendfunc == 2)
+	p->pshader = cgs.media.modsmoke;
+	else if (blendfunc == 3)
+	p->pshader = cgs.media.subsmoke;
+	else
+	p->pshader = cgs.media.alfsmoke;
+
+	p->type = P_LFX;
+	
+	VectorCopy(org, p->org);
+
+	// Manage spread of origin and velocity
+	 for (j = 0; j < 3; j++) {
+		//p->org[j] = org[j] + ((crandom() * (spread / 8)) - (spread/16));
+		p->org[j] = org[j];
+
+		p->vel[j] = (crandom() * dir[j]) * speed;
+		p->vel[j] += ((crandom() * (spread)) - (spread/2));
+		}
+
+	// Manage the Air Friction hack.
+
+	p->airfriction = 0.2;
+	}
+}
 
 
 void CG_LFX_Shock (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc)
@@ -3809,6 +4150,129 @@ void CG_LFX_Shock (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 }
 
 
+void CG_LFX_Spark (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc)
+{
+	int i, j;
+	int cont = 50;
+	cparticle_t	*p;
+
+	cont = count;
+
+    for (i = 0; i < cont; i++) {
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+	p->time = cg.time;
+	
+	p->endtime = cg.time + duration;
+	p->startfade = cg.time;
+	
+	p->color = GREY75;
+	//p->color = EMISIVEFADE;
+
+	p->alpha = 1.0f;
+	p->alphavel = 0.0f;
+ 	//p->qolor = (color & ~7) + (rand() & 7);
+	p->height = p->width = scaleup;
+
+	p->endheight = p->height;
+	p->endwidth = p->width;
+
+
+	p->rotate = qfalse; // sparks don't rotate
+	p->roll = 0;	// sparks don't roll
+	
+	p->accel[0] = 0;
+	p->accel[1] = 0;
+	p->accel[2] = 0;
+
+	// Manage colors
+	p->cols[0][0] = color1[0]; 
+	p->cols[1][0] = color1[1];
+	p->cols[2][0] = color1[2];
+	p->cols[3][0] = color1[3];
+
+	p->cols[0][1] = color2[0]; 
+	p->cols[1][1] = color2[1];
+	p->cols[2][1] = color2[2];
+	p->cols[3][1] = color2[3];
+
+	p->cols[0][2] = color3[0]; 
+	p->cols[1][2] = color3[1];
+	p->cols[2][2] = color3[2];
+	p->cols[3][2] = color3[3];
+
+	p->cols[0][3] = color4[0]; 
+	p->cols[1][3] = color4[1];
+	p->cols[2][3] = color4[2];
+	p->cols[3][3] = color4[3];
+
+	p->cols[0][4] = color5[0]; 
+	p->cols[1][4] = color5[1];
+	p->cols[2][4] = color5[2];
+	p->cols[3][4] = color5[3];
+
+
+	// Manage blending Functions
+	if (blendfunc == 1)
+	p->pshader = cgs.media.addball;
+	else if (blendfunc == 2)
+	p->pshader = cgs.media.modball;
+	else if (blendfunc == 3)
+	p->pshader = cgs.media.subball;
+	else if (blendfunc == 666)
+	p->pshader = cgs.media.alfball;
+	else
+	p->pshader = cgs.media.alfball;
+
+	p->type = P_LFX;
+	
+	VectorCopy(org, p->org);
+
+
+	// Manage spread of origin and velocity
+	 for (j = 0; j < 3; j++) {
+		float sped = speed * (1 + crandom()) + (speed * 0.3f);
+		//p->org[j] = org[j] + ((crandom() * (spread / 8)) - (spread/16));
+		p->org[j] = org[j];
+
+		p->vel[j] = (dir[j]) * sped;
+		p->vel[j] += ((crandom() * (spread)) - (spread/2));
+
+	//	p->vel[j] *= crandom();
+
+
+		}
+		// a little kick up
+		p->vel[2] += (speed * 0.4f);
+
+	// Manage the Air Friction hack.
+
+
+	// for (j = 0; j < 3; j++) {
+	//	p->accel[j] = (p->vel[j] * -1);
+	//	}
+
+
+	
+	
+	p->accel[0] = p->accel[1] = p->accel[2] = 0;
+	p->accel[2] = -(PARTICLE_GRAVITY * 6);
+
+	// prepare the initial stretch frame
+
+	VectorCopy(p->org, p->stretchorg);
+	//VectorAdd(p->org,p->vel,p->org);
+
+	p->airfriction = 0.7;
+	p->bounce = 4;
+	if (blendfunc == 666)
+	p->bounce = 666;
+	}
+}
 
 
 

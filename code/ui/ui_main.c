@@ -2909,7 +2909,7 @@ static qboolean UI_OwnerDrawVisible(int flags) {
 }
 
 static qboolean UI_Handicap_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
     int h;
     h = Com_Clamp( 5, 100, trap_Cvar_VariableValue("handicap") );
 		if (key == K_MOUSE2) {
@@ -2929,7 +2929,7 @@ static qboolean UI_Handicap_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_Effects_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 
 		if (key == K_MOUSE2) {
 	    uiInfo.effectsColor--;
@@ -2950,7 +2950,7 @@ static qboolean UI_Effects_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_ClanName_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 	// Changed RD
     int i, j;
 	// end changed RD
@@ -2986,7 +2986,7 @@ static qboolean UI_ClanName_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_GameType_HandleKey(int flags, float *special, int key, qboolean resetMap) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		int oldCount = UI_MapCountByGameType(qtrue);
 
 		// hard coded mess here
@@ -3028,7 +3028,7 @@ static qboolean UI_GameType_HandleKey(int flags, float *special, int key, qboole
 
 
 static qboolean UI_NetGameType_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 
 		if (key == K_MOUSE2) {
 			do {
@@ -3057,7 +3057,7 @@ static qboolean UI_NetGameType_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_JoinGameType_HandleKey(int flags, float *special, int key) {
-	if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+	if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 
 		if (key == K_MOUSE2) {
 			ui_joinGameType.integer--;
@@ -3081,7 +3081,7 @@ static qboolean UI_JoinGameType_HandleKey(int flags, float *special, int key) {
 
 
 static qboolean UI_Skill_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
   	int i = trap_Cvar_VariableValue( "g_spSkill" );
 
 		if (key == K_MOUSE2) {
@@ -3103,7 +3103,7 @@ static qboolean UI_Skill_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_TeamName_HandleKey(int flags, float *special, int key, qboolean blue) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
     int i;
     i = UI_TeamIndexFromName(UI_Cvar_VariableString((blue) ? "ui_blueTeam" : "ui_redTeam"));
 
@@ -3127,7 +3127,7 @@ static qboolean UI_TeamName_HandleKey(int flags, float *special, int key, qboole
 }
 
 static qboolean UI_TeamMember_HandleKey(int flags, float *special, int key, qboolean blue, int num) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		// 0 - None
 		// 1 - Human
 		// 2..NumCharacters - Bot
@@ -3161,7 +3161,7 @@ static qboolean UI_TeamMember_HandleKey(int flags, float *special, int key, qboo
 }
 
 static qboolean UI_NetSource_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		
 		if (key == K_MOUSE2) {
 			ui_netSource.integer--;
@@ -3190,7 +3190,7 @@ static qboolean UI_NetSource_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_NetFilter_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 
 		if (key == K_MOUSE2) {
 			ui_serverFilterType.integer--;
@@ -3210,7 +3210,7 @@ static qboolean UI_NetFilter_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_OpponentName_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		if (key == K_MOUSE2) {
 			UI_PriorOpponent();
 		} else {
@@ -3227,7 +3227,7 @@ static qboolean UI_MenuMapName_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_BotName_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		int game = trap_Cvar_VariableValue("g_gametype");
 		int value = uiInfo.botIndex;
 
@@ -3257,7 +3257,7 @@ static qboolean UI_BotName_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_BotSkill_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		if (key == K_MOUSE2) {
 			uiInfo.skillIndex--;
 		} else {
@@ -3274,7 +3274,7 @@ static qboolean UI_BotSkill_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_RedBlue_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		uiInfo.redBlue ^= 1;
 		return qtrue;
 	}
@@ -3282,7 +3282,7 @@ static qboolean UI_RedBlue_HandleKey(int flags, float *special, int key) {
 }
 
 static qboolean UI_Crosshair_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		if (key == K_MOUSE2) {
 			uiInfo.currentCrosshair--;
 		} else {
@@ -3303,7 +3303,7 @@ static qboolean UI_Crosshair_HandleKey(int flags, float *special, int key) {
 
 
 static qboolean UI_SelectedPlayer_HandleKey(int flags, float *special, int key) {
-  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER) {
+  if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_JOY1 || key == K_KP_ENTER) {
 		int selected;
 
 		UI_BuildPlayerList();
@@ -6205,7 +6205,7 @@ void _UI_KeyEvent( int key, qboolean down ) {
   if (Menu_Count() > 0) {
     menuDef_t *menu = Menu_GetFocused();
 		if (menu) {
-			if (key == K_ESCAPE && down && !Menus_AnyFullScreenVisible()) {
+			if ((key == K_ESCAPE || key == K_JOY3)  && down && !Menus_AnyFullScreenVisible()) {
 				Menus_CloseAll();
 			} else {
 				Menu_HandleKey(menu, key, down );
