@@ -3155,6 +3155,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 		case K_AUX15:
 		case K_AUX16:
 			break;
+		case K_JOY1:	
 		case K_KP_ENTER:
 		case K_ENTER:
 			if (item) {
