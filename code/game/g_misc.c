@@ -494,10 +494,35 @@ void DropPortalSource( gentity_t *player ) {
 void SP_monster_puncher( gentity_t *ent ) {
 
 	ent->s.modelindex = G_ModelIndex( "models/monsters/puncher/tris.md3" );
-//	VectorSet (ent->mins, -16, -16, -16);
-//	VectorSet (ent->maxs, 16, 16, 16);
+
+
 	trap_LinkEntity (ent);
 
+
+	VectorSet (ent->r.mins, -16, -16, -16);
+	VectorSet (ent->r.maxs, 16, 16, 32);
+
 	G_SetOrigin( ent, ent->s.origin );
+
 	VectorCopy( ent->s.angles, ent->s.apos.trBase );
+
+
+	// Monstery stuff
+	ent->health = 40;
+	ent->takedamage = qtrue;	// Allow to take damage
+	ent->s.eType = ET_GENERAL;	// ugh
+
+	ent->s.groundEntityNum = ENTITYNUM_NONE;
+	ent->takedamage = qtrue;
+//	ent->inuse = qtrue;
+	ent->classname = "monster";
+	ent->r.contents = CONTENTS_BODY|CONTENTS_CORPSE;
+	ent->clipmask = MASK_PLAYERSOLID;
+	ent->die = monster_die;
+	ent->waterlevel = 0;
+	ent->watertype = 0;
+	ent->flags = 0;
+
+	trap_LinkEntity (ent);
+
 }

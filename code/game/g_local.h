@@ -1394,3 +1394,10 @@ void Svcmd_MessageWrapper( void );
 
 #include "g_killspree.h"
 #include "g_admin.h"
+
+// leilei - monsters
+
+void monster_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
+
+
+
