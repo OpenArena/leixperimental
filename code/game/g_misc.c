@@ -486,3 +486,18 @@ void DropPortalSource( gentity_t *player ) {
 	}
 
 }
+
+
+
+// leilei - monster stuff
+
+void SP_monster_puncher( gentity_t *ent ) {
+
+	ent->s.modelindex = G_ModelIndex( "models/monsters/puncher/tris.md3" );
+//	VectorSet (ent->mins, -16, -16, -16);
+//	VectorSet (ent->maxs, 16, 16, 16);
+	trap_LinkEntity (ent);
+
+	G_SetOrigin( ent, ent->s.origin );
+	VectorCopy( ent->s.angles, ent->s.apos.trBase );
+}

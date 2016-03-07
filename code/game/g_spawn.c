@@ -199,6 +199,9 @@ void SP_team_neutralobelisk( gentity_t *ent );
 
 void SP_item_botroam( gentity_t *ent ) { }
 
+// leilei - monsters
+void SP_monster_puncher(gentity_t *ent);
+
 spawn_t	spawns[] = {
 	// info entities don't do anything at all, but provide positional
 	// information for things controlled by other processes
@@ -278,6 +281,11 @@ spawn_t	spawns[] = {
 	{"team_neutralobelisk", SP_team_neutralobelisk},
 
 	{"item_botroam", SP_item_botroam},
+
+	// leilei - monsters test
+	{"monster_army", SP_monster_puncher},
+	{"monster_dog", SP_monster_puncher},
+	{"monster_knight", SP_monster_puncher},
 
 	{NULL, 0}
 };
