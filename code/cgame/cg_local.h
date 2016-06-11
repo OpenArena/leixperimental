@@ -80,7 +80,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	GIANT_WIDTH			32
 #define	GIANT_HEIGHT		48
 
-#define	NUM_CROSSHAIRS		99
+#define	NUM_CROSSHAIRS		10
 
 #define TEAM_OVERLAY_MAXNAME_WIDTH	12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH	16
@@ -213,6 +213,9 @@ typedef struct centity_s {
 	vec3_t			eyepos;		// where our eyes at
 	vec3_t			eyepos2;	// where our other eyes at
 	vec3_t			eyelookat;	// what we seein'
+
+	vec3_t			weapOrigin;	// leilei - for lazy bob
+	vec3_t			weapAngles;
 } centity_t;
 
 
@@ -395,6 +398,7 @@ typedef struct {
 
 	int		isDead;
 	vec3_t			eyepos;		// leilei - eye positions loaded from anim cfg
+	int		onepiece;		// leilei - g_enableFS meshes
 } clientInfo_t;
 
 
@@ -1703,6 +1707,8 @@ void CG_LFX_Smoke2 (vec3_t org, vec3_t dir, float spread, float speed, vec4_t co
 void CG_LFX_Shock (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc);
 void CG_LFX_Spark (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc);
 
+void CG_LFX_Blood (vec3_t org, vec3_t dir, float pressure); // leilei - common blood function
+
 //void    CG_LeiTrailer (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
 
 //
@@ -1991,6 +1997,11 @@ void		trap_startCamera(int time);
 qboolean	trap_getCameraInfo(int time, vec3_t *origin, vec3_t *angles);
 
 qboolean	trap_GetEntityToken( char *buffer, int bufferSize );
+
+//void CG_MoveParticles (void); 			// leilei - q1 code
+//void	CG_QlearParticles (void);		// leilei - q1 code
+//void	CG_InitParticles (void);		// leilei - q1 code
+
 
 void	CG_ClearParticles (void);
 void	CG_AddParticles (void);

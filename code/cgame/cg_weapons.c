@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
 
+
 /*
 ==========================
 CG_MachineGunEjectBrass
@@ -2398,11 +2399,43 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 	// set up gun position
 	CG_CalculateWeaponPosition( hand.origin, angles );
 
+
+	// leilei - lazy weapon hack
+	if (cg_bobmodel.integer == 666)
+	{
+		int h;
+		float theheight = 0;
+		vec3_t lplp, hphp;
+		vec3_t eh;
+	VectorMA( hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], eh );
+	VectorMA( hand.origin, cg_gun_y.value, cg.refdef.viewaxis[1], eh );
+	VectorMA( hand.origin, cg_gun_z.value, cg.refdef.viewaxis[2], eh );
+		for(h=0;h<3;h++){
+		lplp[h] = (cent->weapOrigin[h] - eh[h])/20;
+		hphp[h] = (cent->weapOrigin[h] - eh[h])/11;
+		//	if (lplp[h] > 10) lplp[h] = 10;
+		//	if (lplp[h] < -10) lplp[h] = -10;
+		//cent->weapOrigin[h] = cent->lerpOrigin[h] + lplp[h];
+		cent->weapOrigin[h] = eh[h] + lplp[h] + hphp[h];
+
+		}
+
+		hand.origin[0] = cent->weapOrigin[0];
+		//VectorMA( hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], hand.origin );
+		hand.origin[1] = cent->weapOrigin[1];
+		hand.origin[2] = cent->weapOrigin[2];
+	
+	AnglesToAxis( angles, hand.axis );
+
+	}
+	else
+	{
 	VectorMA( hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], hand.origin );
 	VectorMA( hand.origin, cg_gun_y.value, cg.refdef.viewaxis[1], hand.origin );
 	VectorMA( hand.origin, (cg_gun_z.value+fovOffset), cg.refdef.viewaxis[2], hand.origin );
 
 	AnglesToAxis( angles, hand.axis );
+	}
 
 	// map torso animations to weapon animations
 	if ( cg_gun_frame.integer ) {
@@ -3549,7 +3582,83 @@ static void CG_Explosionia ( centity_t *cent ) {
 */
 
 
+// Generic Spark effect in place of blood for low violence...or just enhancing things.  No velocity, just damage.
 
+void CG_LFX_HitSpark (vec3_t origin, float damage) {
+	qhandle_t		mod;
+	qhandle_t		mark;
+	qhandle_t		shader;
+	sfxHandle_t		sfx;
+	float			radius;
+	float			light;
+	vec3_t			lightColor;
+	localEntity_t	*le;
+	int				r;
+	qboolean		alphaFade;
+	qboolean		isSprite;
+	int				duration;
+	vec3_t			sprOrg;
+	vec3_t			sprVel;
+	vec3_t			dir;
+	vec4_t colory, colory2, colory3, colory4;
+
+	// direction is random?
+		dir[0] = rand()*360;
+		dir[1] = rand()*360;
+		dir[2] = rand()*360;
+
+		// shockwave first.
+
+		colory[0] = 0.4; colory[1] = 0.6; colory[2] = 1.0; colory[3] = 1.0;
+		colory2[0] = 0.0; colory2[1] = 1.0; colory2[2] = 0.5; colory2[3] = 0.9;
+		colory3[0] = 0.0; colory3[1] = 0.0; colory3[2] = 0.3; colory3[3] = 0.7;
+		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+		VectorMA( origin, 4, dir, sprOrg );
+		VectorScale( dir, 64, sprVel );
+
+		CG_LFX_Shock (sprOrg, dir, 0, 0, colory, colory2, colory3, colory4, colory4, 1, 500, 270, 1);
+
+		// Ball
+
+		colory[0] = 1.0; colory[1] = 0.2; colory[2] = 0.1; colory[3] = 1.0;
+		colory2[0] = 0.5; colory2[1] = 0.0; colory2[2] = 0.0; colory2[3] = 0.9;
+		colory3[0] = 0.1; colory3[1] = 0.0; colory3[2] = 0.0; colory3[3] = 0.7;
+		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+		VectorMA( origin, 12, dir, sprOrg );
+		VectorScale( dir, 64, sprVel );
+
+		CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 1200, 54, 1);
+	
+		colory[0] = 1.0; colory[1] = 1.0; colory[2] = 0.9; colory[3] = 1.0;
+		colory2[0] = 1.0; colory2[1] = 1.0; colory2[2] = 0.7; colory2[3] = 0.9;
+		colory3[0] = 0.4; colory3[1] = 0.3; colory3[2] = 0.2; colory3[3] = 0.7;
+		colory4[0] = 0.1; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+	
+		CG_LFX_Smoke (sprOrg, sprVel, 62, 2, colory, colory2, colory3, colory4, colory4, 72, 200,84, 1);
+		CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 600, 74, 1);
+
+		CG_LFX_Smoke (sprOrg, sprVel, 44, 1.3, colory, colory2, colory3, colory4, colory4, 3, 800,3, 1);
+
+
+		CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 600, 74, 1);
+
+		// Sparks!
+
+		colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+		colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+		colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+		colory4[0] = 0.4; colory4[1] = 0.1; colory4[2] = 0.0; colory4[3] = 0.0;
+		VectorMA( origin, 12, dir, sprOrg );
+		VectorScale( dir, 64, sprVel );
+
+		CG_LFX_Spark (sprOrg, sprVel, 198, 3, colory, colory2, colory3, colory4, colory4, damage, 1499, 0.8f, 1);
+
+	//	CG_LFX_Spark (sprOrg, sprVel, 175, 0.1f, colory, colory2, colory3, colory4, colory4, 5, 340, 7, 1);
+
+
+
+
+}
 
 
 void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
@@ -3675,7 +3784,7 @@ void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
 		VectorMA( origin, 12, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 
-		CG_LFX_Spark (sprOrg, sprVel, 175, 3, colory, colory2, colory3, colory4, colory4, 12, 1240, 0.8f, 1);
+		CG_LFX_Spark (sprOrg, sprVel, 175, 5, colory, colory2, colory3, colory4, colory4, 25, 1240, 0.8f, 1);
 
 	//	CG_LFX_Spark (sprOrg, sprVel, 175, 0.1f, colory, colory2, colory3, colory4, colory4, 5, 340, 7, 1);
 
@@ -4247,6 +4356,9 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				VectorScale( dir, 1, sprVel );
 				CG_LFX_Spark (sprOrg, sprVel, 25, 85, colory, colory2, colory3, colory4, colory4, 5, 5540, 0.5f, 1);
 
+			
+
+		
 
 
 					break;
@@ -4265,8 +4377,8 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 
 		VectorMA( origin, -5, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
-		//CG_RunParticleEffect(sprOrg, sprOrg, 7, 20);
-
+		CG_RunParticleEffect(sprOrg, sprOrg, 7, 20);
+		CG_LFX_Blood (sprOrg, sprVel, 25);	// blood test
 		break;
 		}
 
@@ -4547,9 +4659,11 @@ CG_MissileHitPlayer
 */
 void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum ) {
 // LEILEI ENHANCEMENT
+
 	if (cg_leiEnhancement.integer == 1) {
 		CG_SmokePuff( origin, dir, 22, 1, 1, 1, 1.0f, 900, cg.time, 0, 0,  cgs.media.lbldShader1 );
 		CG_SpurtBlood( origin, dir, 1);
+
 //		CG_SpurtBlood( origin, dir, 4);
 //		CG_SpurtBlood( origin, dir, -12);
 		}
@@ -4562,13 +4676,15 @@ void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum )
 		colory3[0] = 1.0; colory3[1] = 0.0; colory3[2] = 0.0; colory3[3] = 1.0;
 		colory4[0] = 1.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 1.0;
 
-		CG_LFX_Spark (origin, dir, 175, 21, colory, colory2, colory3, colory4, colory4, 10, 1240, 1.3f, 666);
+		//CG_LFX_Spark (origin, dir, 175, 21, colory, colory2, colory3, colory4, colory4, 10, 1240, 1.3f, 666);
+		CG_LFX_HitSpark (origin, 10);
 		}
 
 
 	else
 	CG_Bleed( origin, entityNum );
 
+	CG_LFX_HitSpark (origin, 70);
 	// some weapons will make an explosion with the blood, while
 	// others will just make the blood
 	switch ( weapon ) {
@@ -5031,30 +5147,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 	// impact splash and mark
 	if ( flesh ) {
 // LEILEI ENHANCEMENT
-	/*
-	if (cg_leiEnhancement.integer == 1) {
-
-		
-						// Blood Hack
-				VectorCopy( normal, kapow );
-					
-				kapow[0] = kapow[0] * (crandom() * 65 + 37);
-				kapow[1] = kapow[1] * (crandom() * 65 + 37);
-				kapow[2] = kapow[2] * (crandom() * 65 + 37);
-				VectorCopy( kapow, kapew );
-
-				kapew[0] = kapew[0] * (crandom() * 2 + 37);
-				kapew[1] = kapew[1] * (crandom() * 2 + 37);
-				kapew[2] = kapew[2] * (crandom() * 2 + 37);
-
-		CG_SmokePuff( end, kapow, 6, 1, 1, 1, 1.0f, 600, cg.time, 0, 0,  cgs.media.lbldShader1 );
-		CG_SpurtBlood( end, kapow, 2);
-		CG_SpurtBlood( end, kapew, 1);
-
-		}
-	*/
-
-if (cg_leiSuperGoreyAwesome.integer) {
+	if (cg_leiSuperGoreyAwesome.integer) {
 
 		//CG_SpurtBlood( end, kapow, -2);
 		 
@@ -5069,8 +5162,15 @@ if (cg_leiSuperGoreyAwesome.integer) {
 		colory3[0] = 1.0; colory3[1] = 0.0; colory3[2] = 0.0; colory3[3] = 1.0;
 		colory4[0] = 1.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 1.0;
 
-		CG_LFX_Spark (end, normal, 175, 11, colory, colory2, colory3, colory4, colory4, 5, 1240, 1.1f, 666);
-		CG_LFX_Spark (end, reversenormal, 15, 155, colory, colory2, colory3, colory4, colory4, 7, 1240, 1.3f, 666);
+		// this effect sucks!
+		CG_LFX_Spark (end, normal, 175, 91, colory, colory2, colory3, colory4, colory4, 5, 5240, 1.1f, 666);
+		CG_LFX_Spark (end, reversenormal, 35, 95, colory, colory2, colory3, colory4, colory4, 7, 5240, 1.3f, 666);
+
+		//	VectorMA( end, 1, normal, sprOrg );
+		//	VectorScale( normal, 1, sprVel );
+		//	CG_LFX_Spark (sprOrg, sprVel, 25, 85, colory, colory2, colory3, colory4, colory4, 24, 5540, 0.5f, 666);
+
+
 
 			
 		}

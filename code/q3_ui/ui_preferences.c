@@ -61,7 +61,7 @@ GAME OPTIONS MENU
 #define ID_CHATBEEP             145
 #define ID_TEAMCHATBEEP         146
 
-#define	NUM_CROSSHAIRS			99
+#define	NUM_CROSSHAIRS			10
 
 
 typedef struct {
