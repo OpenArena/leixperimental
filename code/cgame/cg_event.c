@@ -938,12 +938,14 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_PLAYER_TELEPORT_IN");
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
 		CG_SpawnEffect( position);
+		// TODO: 1996 splash effect, pre 4.01 splash effect
 		break;
 
 	case EV_PLAYER_TELEPORT_OUT:
 		DEBUGNAME("EV_PLAYER_TELEPORT_OUT");
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleOutSound );
 		CG_SpawnEffect(  position);
+		// TODO: 1996 splash effect, pre 4.01 splash effect
 		break;
 
 	case EV_ITEM_POP:
@@ -955,7 +957,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_ITEM_RESPAWN");
 		cent->miscTime = cg.time;	// scale up from this
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.respawnSound );
-
+/*	// might have to cvar this thing
 		if (cg_leiEnhancement.integer == 2000) 
 		{
 			vec4_t colory, colory2 ,colory3, colory4;
@@ -967,6 +969,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		CG_LFX_Smoke (cent->lerpOrigin, NULL, 24, 0, colory, colory2, colory3, colory4, colory4, 32, 800,34, 1);
 
 		}
+*/
 		break;
 
 	case EV_GRENADE_BOUNCE:
@@ -1329,26 +1332,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			trap_S_StartSound( NULL, es->number, CHAN_BODY, cgs.media.gibSound );
 		}
 		CG_GibPlayer( cent->lerpOrigin );
-
-		// Gib Spurt test
-		{
-			vec4_t colory, colory2 ,colory3, colory4;
-	/*	colory[0] = 1.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 1.0;
-		colory2[0] = 1.0; colory2[1] = 0.0; colory2[2] = 0.1; colory2[3] = 0.9;
-		colory3[0] = 0.4; colory3[1] = 0.0; colory3[2] = 0.2; colory3[3] = 0.7;
-		colory4[0] = 0.1; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
-	*/
-
-		colory[0] = 0.0; colory[1] = 1.0; colory[2] = 1.0; colory[3] = 1.0;
-		colory2[0] = 0.0; colory2[1] = 0.9; colory2[2] = 1.0; colory2[3] = 0.9;
-		colory3[0] = 0.0; colory3[1] = 0.5; colory3[2] = 0.8; colory3[3] = 0.7;
-		colory4[0] = 0.0; colory4[1] = 0.2; colory4[2] = 0.2; colory4[3] = 0.0;
-
-	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 84, 0, colory, colory2, colory3, colory4, colory4, 32, 3600,54, 3);
-	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 114, 0, colory, colory2, colory3, colory4, colory4, 22, 2600,54, 3);
-	//	CG_LFX_Smoke (cent->lerpOrigin, cent->lerpOrigin, 144, 0, colory, colory2, colory3, colory4, colory4, 12, 1600,54, 3);
-		}
-
+			// TODO: New function option for a more directional gib effect
 		break;
 
 	case EV_STOPLOOPINGSOUND:

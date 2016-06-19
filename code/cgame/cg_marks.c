@@ -302,6 +302,17 @@ void CG_AddMarks( void ) {
 #define EMISIVEFADE	3
 #define GREY75		4
 
+#define BLOODRED	2
+#define EMISIVEFADE	3
+#define LFXSPARK	4
+#define LFXBURST	5
+#define LFXLIQUID	6
+#define LFXSTRAND	7
+#define LFXTRAIL	8
+
+#define	MAX_TRAIL_POINTS 8
+#define	TRAIL_LENGTH_SPLIT 64
+
 typedef struct particle_s
 {
 	struct particle_s	*next;
@@ -347,17 +358,17 @@ typedef struct particle_s
 	vec3_t		src;
 	vec3_t		dest;
 	float		airfriction;
+	float 		rollfriction;
 	int		qolor;		// quake palette color translation
 	int		ramp;		// quake color ramping (rocket trails, explosion)
 	qboolean	qarticle;	// is a quake style particle
 
 	vec4_t		cols[5];	// fading color cycle
-	vec3_t		stretchorg;	// old origin to stretch from
-	vec3_t		stretchorg2;	// even older origin to stretch from
 	vec3_t		dir;		// angle, direction
+	float 		rollvel;	// velocity of roll
 	float		bounce;		// how much elasticity does it have
-	float		len;		// length of spark
-	float		timetrail;	// time of trail......
+	vec3_t		torg[MAX_TRAIL_POINTS];	// extra origins to use for trails and bursts
+	int		active_trail;	// how many trail points are active on this trail
 } cparticle_t;
 
 // more quake stuff
@@ -671,7 +682,7 @@ static int	numShaderAnims;
 // done.
 
 #define		PARTICLE_GRAVITY	40
-#define		MAX_PARTICLES	2048
+#define		MAX_PARTICLES	16384
 
 cparticle_t	*active_particles, *free_particles;
 cparticle_t	particles[MAX_PARTICLES];
@@ -741,7 +752,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 	polyVert_t	TRIverts[3];
 	vec3_t		rright2, rup2;
 	vec3_t		oldorg;
-	vec3_t		stretchorg;
+
   	float frametime;
 
 	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY
@@ -829,6 +840,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 			TRIverts[2].modulate[1] = 255;
 			TRIverts[2].modulate[2] = 255;
 			TRIverts[2].modulate[3] = 255 * p->alpha;	
+			trap_R_AddPolyToScene( p->pshader, 4, verts );
 		}
 	
 	}
@@ -904,6 +916,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		verts[3].modulate[1] = 255;	
 		verts[3].modulate[2] = 255;	
 		verts[3].modulate[3] = 255;	
+		trap_R_AddPolyToScene( p->pshader, 4, verts );
 	}
 		else if (p->type == P_SPARK)	// leilei - to return......
 	{
@@ -1054,7 +1067,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		verts[3].modulate[1] = 255 * color[1];	
 		verts[3].modulate[2] = 255 * color[2];	
 		verts[3].modulate[3] = 255  * invratio;	
-		
+		trap_R_AddPolyToScene( p->pshader, 4, verts );
 	}
 	else if (p->type == P_LFX)
 	{// create a front rotating facing polygon
@@ -1190,8 +1203,10 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				verts[3].modulate[2] = 255 * color[2];	
 				verts[3].modulate[3] = 255 * invratio;
 
+				trap_R_AddPolyToScene( p->pshader, 4, verts );
+
 		}
-		else if (p->color == GREY75)
+		else if (p->color == LFXSPARK)
 		{	// STRETCHY SPARK sprite - used for sparks etc
 				vec3_t	argles;
 				vec3_t		forward, right, up;
@@ -1207,15 +1222,19 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 			// Set up the 'beam'
 
 			
-				VectorCopy(p->stretchorg, oldorgstretch);
+
+				oldorgstretch[0] = org[0] + ((p->vel[0] ) * 0.005);
+				oldorgstretch[1] = org[1] + ((p->vel[1]) * 0.005);
+				oldorgstretch[2] = org[2] + ((p->vel[2] ) * 0.005);
+
 
 				VectorSubtract( org, oldorgstretch, fwd );
+
 				len = VectorNormalize( fwd );
 				//len = DotProduct(p->vel);// * (5 / (cg.time - cg.oldTime)) ;
 				len *= p->height + p->width;
 
 				len *= 7;	// doesn't look good in low framerates :/
-			//	len = p->len;
 				begin = -len / 2;
 				end = len / 2;
 		
@@ -1271,10 +1290,12 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				verts[3].modulate[2] = 255 * color[2];	
 				verts[3].modulate[3] = 255 * invratio;
 			
-				// center glow of softness?
+				trap_R_AddPolyToScene( p->pshader, 4, verts );
+				// center glow of softness?  Enable for 2002 particleset?
+	/*
 				{
 					float wham = begin - end;
-						trap_R_AddPolyToScene( p->pshader, 4, verts );
+				
 
 									width = p->width + ( ratio * ( p->endwidth - p->width) );
 				height = p->height + ( ratio * ( p->endheight - p->height) );
@@ -1321,13 +1342,286 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				verts[3].modulate[2] = 32 * color[2];	
 				verts[3].modulate[3] = 32 * invratio;
 					
-						
+				trap_R_AddPolyToScene( p->pshader, 4, verts );
 				}
-
+		*/
+				
 		}
+		else if (p->color == LFXBURST)
+		{	// STRETCHY BURST sprite - used for explosions
+			// like spark but origin doesnt change. it just keeps stretching
+			// from where it was spawned.
+				vec3_t	argles;
+				vec3_t		forward, right, up;
+				vec3_t		fwd, rite;
+				vec3_t		line;
+				float		len, begin, end;
+				vec3_t		start, finish;
+
+				vec3_t oldorgstretch;
+				vectoangles( p->dir, argles );
+				AngleVectors ( argles, NULL, right, up);
+
+			// Set up the 'beam'
+
+			
+
+				oldorgstretch[0] = p->torg[0][0];
+				oldorgstretch[1] = p->torg[0][1];
+				oldorgstretch[2] = p->torg[0][2];
+
+
+				VectorSubtract( org, oldorgstretch, fwd );
+
+				len = VectorNormalize( fwd );
+				//len = DotProduct(p->vel);// * (5 / (cg.time - cg.oldTime)) ;
+				len *= p->height + p->width;
+
+				len *= 1;	// doesn't look good in low framerates :/
+				begin = 0;
+				end = len;
+		
+
+
+			// Set up the particle
+
+				width = p->width + ( ratio * ( p->endwidth - p->width) );
+				height = p->height + ( ratio * ( p->endheight - p->height) );
+		
+
+				VectorMA( org, begin, fwd, start );
+				VectorMA( org, end, fwd, finish );
+
+				line[0] = DotProduct( fwd, cg.refdef.viewaxis[1] );
+				line[1] = DotProduct( fwd, cg.refdef.viewaxis[2] );
+
+				VectorScale( cg.refdef.viewaxis[1], line[1], right );
+				VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+				VectorNormalize( right );
+
+				VectorMA( finish, width, right, verts[0].xyz );	
+				verts[0].st[0] = 0;	
+				verts[0].st[1] = 0;	
+				verts[0].modulate[0] = 255 * color[0];	
+				verts[0].modulate[1] = 255 * color[1];	
+				verts[0].modulate[2] = 255 * color[2];	
+				verts[0].modulate[3] = 255 * invratio;
+		
+				VectorMA( finish, -width, right, verts[1].xyz );	
+				verts[1].st[0] = 0;	
+				verts[1].st[1] = 1;	
+				verts[1].modulate[0] = 255 * color[0];	
+				verts[1].modulate[1] = 255 * color[1];	
+				verts[1].modulate[2] = 255 * color[2];	
+				verts[1].modulate[3] = 255 * invratio;
+		
+	
+				VectorMA( start, -width, right, verts[2].xyz );	
+				verts[2].st[0] = 1;	
+				verts[2].st[1] = 1;	
+				verts[2].modulate[0] = 255 * color[0];	
+				verts[2].modulate[1] = 255 * color[1];	
+				verts[2].modulate[2] = 255 * color[2];	
+				verts[2].modulate[3] = 255 * invratio;
+		
+	
+				VectorMA( start, width, right, verts[3].xyz );	
+				verts[3].st[0] = 1;	
+				verts[3].st[1] = 0;	
+				verts[3].modulate[0] = 255 * color[0];	
+				verts[3].modulate[1] = 255 * color[1];	
+				verts[3].modulate[2] = 255 * color[2];	
+				verts[3].modulate[3] = 255 * invratio;
+			
+			trap_R_AddPolyToScene( p->pshader, 4, verts );
+		}
+
+		else if (p->color == LFXTRAIL)
+		{	// STRETCHY TRAIL sprite - used for..... i dunno
+			// like burst but splits into more trails when the certain length is achieved
+				vec3_t	argles;
+				vec3_t		forward, right, up;
+				vec3_t		fwd, rite;
+				vec3_t		line;
+				float		len, begin, end;
+				vec3_t		start, finish;
+
+				vec3_t oldorgstretch;
+				vectoangles( p->dir, argles );
+				AngleVectors ( argles, NULL, right, up);
+
+					// Set up the first point
+	
+					oldorgstretch[0] = p->torg[0][0];
+					oldorgstretch[1] = p->torg[0][1];
+					oldorgstretch[2] = p->torg[0][2];
+	
+	
+					VectorSubtract( oldorgstretch, org, fwd );
+	
+					len = VectorNormalize( fwd );
+	
+				len *= 1;	// doesn't look good in low framerates :/
+				begin = 0;
+				end = len;
+
+					if (len > TRAIL_LENGTH_SPLIT) // it's time to split!!!.......:(
+						{
+							int eh;
+							if (p->active_trail < MAX_TRAIL_POINTS)
+							p->active_trail++;
+					
+							// copy and move the points over
+							for (eh=0;eh<MAX_TRAIL_POINTS-1;eh++){
+								VectorCopy(p->torg[eh],p->torg[eh+1]);
+								}
+
+							VectorCopy(p->org,p->torg[0]);
+								
+	
+						}
+
+
+			// Set up the particle
+
+				width = p->width + ( ratio * ( p->endwidth - p->width) );
+				height = p->height + ( ratio * ( p->endheight - p->height) );
+		
+
+				VectorMA( org, begin, fwd, start );
+				VectorMA( org, end, fwd, finish );
+
+				line[0] = DotProduct( fwd, cg.refdef.viewaxis[1] );
+				line[1] = DotProduct( fwd, cg.refdef.viewaxis[2] );
+
+				VectorScale( cg.refdef.viewaxis[1], line[1], right );
+				VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+				VectorNormalize( right );
+
+				VectorMA( finish, width, right, verts[0].xyz );	
+				verts[0].st[0] = 0;	
+				verts[0].st[1] = 0;	
+				verts[0].modulate[0] = 255 * color[0];	
+				verts[0].modulate[1] = 255 * color[1];	
+				verts[0].modulate[2] = 255 * color[2];	
+				verts[0].modulate[3] = 255 * invratio;
+		
+				VectorMA( finish, -width, right, verts[1].xyz );	
+				verts[1].st[0] = 0;	
+				verts[1].st[1] = 1;	
+				verts[1].modulate[0] = 255 * color[0];	
+				verts[1].modulate[1] = 255 * color[1];	
+				verts[1].modulate[2] = 255 * color[2];	
+				verts[1].modulate[3] = 255 * invratio;
+		
+	
+				VectorMA( start, -width, right, verts[2].xyz );	
+				verts[2].st[0] = 1;	
+				verts[2].st[1] = 1;	
+				verts[2].modulate[0] = 255 * color[0];	
+				verts[2].modulate[1] = 255 * color[1];	
+				verts[2].modulate[2] = 255 * color[2];	
+				verts[2].modulate[3] = 255 * invratio;
+		
+	
+				VectorMA( start, width, right, verts[3].xyz );	
+				verts[3].st[0] = 1;	
+				verts[3].st[1] = 0;	
+				verts[3].modulate[0] = 255 * color[0];	
+				verts[3].modulate[1] = 255 * color[1];	
+				verts[3].modulate[2] = 255 * color[2];	
+				verts[3].modulate[3] = 255 * invratio;
+			
+			trap_R_AddPolyToScene( p->pshader, 4, verts );
+
+
+			// Set up the rest of the trail
+				{
+					int eh;
+				for (eh=1;eh<p->active_trail;eh++){
+					vec3_t there;
+					//float invbit = invratio * (eh / p->active_trail);
+					float invbit = invratio / (p->active_trail / eh-1);
+					float invbat = invratio / (p->active_trail / eh);
+
+						
+
+					oldorgstretch[0] = p->torg[eh][0];
+					oldorgstretch[1] = p->torg[eh][1];
+					oldorgstretch[2] = p->torg[eh][2];
+	
+					
+					there[0] = p->torg[eh-1][0];
+					there[1] = p->torg[eh-1][1];
+					there[2] = p->torg[eh-1][2];
+	
+					VectorSubtract( oldorgstretch, there, fwd );
+
+	
+					len = VectorNormalize( fwd );
+	
+					len *= 1;	// doesn't look good in low framerates :/
+					begin = 0;
+					end = len;
+
+					// todo: fade these gradually?
+					width = p->width + ( ratio * ( p->endwidth - p->width) );
+					height = p->height + ( ratio * ( p->endheight - p->height) );
+			
+	
+					VectorMA( there, begin, fwd, start );
+					VectorMA( there, end, fwd, finish );
+	
+					line[0] = DotProduct( fwd, cg.refdef.viewaxis[1] );
+					line[1] = DotProduct( fwd, cg.refdef.viewaxis[2] );
+	
+					VectorScale( cg.refdef.viewaxis[1], line[1], right );
+					VectorMA( right, -line[0], cg.refdef.viewaxis[2], right );
+					VectorNormalize( right );
+	
+					VectorMA( finish, width, right, verts[0].xyz );	
+					verts[0].st[0] = 0;	
+					verts[0].st[1] = 0;	
+					verts[0].modulate[0] = 255 * color[0];	
+					verts[0].modulate[1] = 255 * color[1];	
+					verts[0].modulate[2] = 255 * color[2];	
+					verts[0].modulate[3] = 255 * invbit;
+			
+					VectorMA( finish, -width, right, verts[1].xyz );	
+					verts[1].st[0] = 0;	
+					verts[1].st[1] = 1;	
+					verts[1].modulate[0] = 255 * color[0];	
+					verts[1].modulate[1] = 255 * color[1];	
+					verts[1].modulate[2] = 255 * color[2];	
+					verts[1].modulate[3] = 255 * invbit;
+			
+		
+					VectorMA( start, -width, right, verts[2].xyz );	
+					verts[2].st[0] = 1;	
+					verts[2].st[1] = 1;	
+					verts[2].modulate[0] = 255 * color[0];	
+					verts[2].modulate[1] = 255 * color[1];	
+					verts[2].modulate[2] = 255 * color[2];	
+					verts[2].modulate[3] = 255 * invbat;
+		
+		
+					VectorMA( start, width, right, verts[3].xyz );	
+					verts[3].st[0] = 1;	
+					verts[3].st[1] = 0;	
+					verts[3].modulate[0] = 255 * color[0];	
+					verts[3].modulate[1] = 255 * color[1];	
+					verts[3].modulate[2] = 255 * color[2];	
+					verts[3].modulate[3] = 255 * invbat;
+					trap_R_AddPolyToScene( p->pshader, 4, verts );
+				}			
+			}
+		}
+
 		else
 			// VP PARALLEL sprite 
 		{
+				//	trace_t pt1, pt2, pt3, pt4;
+				//	float avgfrac;
 				width = p->width + ( ratio * ( p->endwidth - p->width) );
 				height = p->height + ( ratio * ( p->endheight - p->height) );
 		
@@ -1345,6 +1639,9 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 					VectorMA (point, -width, pvright, point);	
 				}
 		
+				// Faded clipping test. we don't need dx10 after all :)
+
+				
 		
 				VectorCopy (point, verts[0].xyz);	
 				verts[0].st[0] = 0;	
@@ -1392,8 +1689,40 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 				verts[3].modulate[1] = 255 * color[1];	
 				verts[3].modulate[2] = 255 * color[2];	
 				verts[3].modulate[3] = 255 * invratio;
+
+					/*
+					// faded clipping stuff
+
+					CG_Trace (&pt1, verts[0].xyz, NULL, NULL, verts[3].xyz, -1, CONTENTS_SOLID);
+					CG_Trace (&pt2, verts[1].xyz, NULL, NULL, verts[0].xyz, -1, CONTENTS_SOLID);
+					CG_Trace (&pt3, verts[2].xyz, NULL, NULL, verts[1].xyz, -1, CONTENTS_SOLID);
+					CG_Trace (&pt4, verts[3].xyz, NULL, NULL, verts[2].xyz, -1, CONTENTS_SOLID);
+
+
+					if (pt1.fraction < 0) pt1.fraction = 0;
+					if (pt2.fraction < 0) pt2.fraction = 0;
+					if (pt3.fraction < 0) pt3.fraction = 0;
+					if (pt4.fraction < 0) pt4.fraction = 0;
+
+					if (pt1.fraction > 1) pt1.fraction = 1;
+					if (pt2.fraction > 1) pt2.fraction = 1;
+					if (pt3.fraction > 1) pt3.fraction = 1;
+					if (pt4.fraction > 1) pt4.fraction = 1;
+
+					avgfrac = (pt1.fraction + pt2.fraction + pt3.fraction + pt4.fraction) / 4;
+					verts[0].modulate[3] *= pt1.fraction;
+					verts[1].modulate[3] *= pt2.fraction;
+					verts[2].modulate[3] *= pt3.fraction;
+					verts[3].modulate[3] *= pt4.fraction;
+
+					verts[0].modulate[3] *= avgfrac;
+					verts[1].modulate[3] *= avgfrac;
+					verts[2].modulate[3] *= avgfrac;
+					verts[3].modulate[3] *= avgfrac;
+					*/
+
 				}
-		
+		trap_R_AddPolyToScene( p->pshader, 4, verts );
 	}
 
 	else if (p->type == P_QUAKE)		// leilei - quake style particles
@@ -1523,7 +1852,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		verts[3].modulate[1] = 255 * color[1];	
 		verts[3].modulate[2] = 255 * color[2];	
 		verts[3].modulate[3] = 255  * invratio;	
-		
+		trap_R_AddPolyToScene( p->pshader, 4, verts );
 	}
 
 	else if (p->type == P_BLEED)
@@ -1555,7 +1884,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 //	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY)
 //		trap_R_AddPolyToScene( p->pshader, 3, TRIverts );
 //	else
-		trap_R_AddPolyToScene( p->pshader, 4, verts );
+//		trap_R_AddPolyToScene( p->pshader, 4, verts );
 
 
 
@@ -1592,6 +1921,8 @@ void CG_AddParticles (void)
 	float			time1;
 	float			dvel;
 	float			grav;
+
+	float f;
 
 	if (!initparticles)
 		CG_ClearParticles ();
@@ -1631,8 +1962,10 @@ void CG_AddParticles (void)
 
 		VectorCopy(p->org, oldorg);
 
-		//CG_AddParticleToScene (p, p->org, alpha);
 
+
+
+			
 		p->vel[0] += p->accel[0]*frametime;
 		p->vel[1] += p->accel[1]*frametime;
 		p->vel[2] += p->accel[2]*frametime;
@@ -1647,11 +1980,24 @@ void CG_AddParticles (void)
 		oldorg[1] = p->org[1];
 		oldorg[2] = p->org[2];
 
+
+
+
+		if (p->rollfriction){		
+			f = 1.0f - MINe(p->rollfriction * frametime, 1);
+			p->rollvel *= f;
+		}
+		
+		if (p->airfriction){		
+			f = 1.0f - MINe(p->airfriction * frametime, 1);
+			VectorScale(p->vel, f, p->vel);
+		}	
+
 		p->org[0] += p->vel[0]*frametime;
 		p->org[1] += p->vel[1]*frametime;
 		p->org[2] += p->vel[2]*frametime;
 
-		//p->roll += 80.8;
+		p->roll += (p->rollvel*frametime);
 
 
 		
@@ -1661,8 +2007,11 @@ void CG_AddParticles (void)
 			p->next = free_particles;
 			free_particles = p;
 			p->type = 0;
+			p->airfriction = 0;
 			p->color = 0;
 			p->alpha = 0;
+			p->endtime = cg.time - 0.1;
+			p->active_trail = 0;
 			continue;
 		}
 		
@@ -1680,6 +2029,8 @@ void CG_AddParticles (void)
 				p->accel[0] = 0;
 				p->accel[1] = 0;
 				p->accel[2] = 0;
+				p->rollvel = 0;
+				p->rollfriction = 0;
 				p->qarticle = 0;
 				p->cols[0][0] = 0;	
 				p->cols[1][0] = 0;	
@@ -1701,15 +2052,14 @@ void CG_AddParticles (void)
 				p->cols[1][4] = 0;	
 				p->cols[2][4] = 0;	
 				p->cols[3][4] = 0;	
-				p->qarticle = 0;
 				p->airfriction = 0;
 				p->bounce = 0;
-				p->len = 0;
+				p->active_trail = 0;
 				continue;
 			}
 
 		}
-
+	CG_AddParticleToScene (p, p->org, alpha);
 		// leilei
 		if (p->type == P_QUAKE)
 		{
@@ -1738,19 +2088,6 @@ void CG_AddParticles (void)
 		}
 
 
-		p->vel[0] = p->vel[0] * (1 + (africt[0]));	
-		p->vel[1] = p->vel[1] * (1 + (africt[1]));	
-		p->vel[2] = p->vel[2] * (1 + (africt[2]));	
-
-		//if (oldtime > p->timetrail){
-		//	p->timetrail = cg.time + 60;
-			{
-				int r;
-				for (r=0;r<3;r++)
-					p->stretchorg[r] = oldorg[r];
-	
-			}
-		//}
 
 	// leilei - trail stuffs
 
@@ -1769,15 +2106,6 @@ void CG_AddParticles (void)
 
 
 
-	//
-		
-				//VectorSubtract( p->org, p->oldorgstretch, fwd );
-				//len = VectorNormalize( fwd );
-				//p->len = DotProduct(p->vel) ;
-				//p->len *= p->height + p->width;
-
-				//p->len *= -2;
-
 
 	// leilei - bounce physics
 	if(p->bounce > 0)
@@ -1792,27 +2120,29 @@ void CG_AddParticles (void)
 			{
 				if (trace.fraction < 1){
 				
-					//CG_Printf (" da da da dada %f %f %f afro circus\n", p->vel[0], p->vel[1], p->vel[2]);
-						//CG_Printf (" da da da dada %f %f %f afro circus\n", trace.plane.normal[0], trace.plane.normal[1], trace.plane.normal[2]);
-						//dist = DotProduct(p->vel, trace.plane.normal) * p->bounce;
-						//VectorMA(p->vel, dist, trace.plane.normal, p->vel);
 						VectorCopy(trace.endpos, p->org);	// particle where we've hit from
-						//VectorClear(p->vel);
 					
 						if (p->bounce == 666){ // blood
 						 CG_ImpactMark( cgs.media.bloodMarkShader, p->org, trace.plane.normal, random()*360,1,1,1, p->alpha, qtrue, 15, qfalse );
 							p->endtime = p->time; // time to die!
 						}
 
+						if (p->bounce < 0)
+						{
+							// bounce -1 means remove on impact
+							p->endtime = cg.time;
+						}
+
 						// anything else - bounce off solid
 						dist = DotProduct(p->vel, trace.plane.normal) * -p->bounce;
 						VectorMA(p->vel, dist, trace.plane.normal, p->vel);
+
 						// lets roll
 						//p->vel[2] = 7;
 					}
 			}	
 	}
-		CG_AddParticleToScene (p, p->org, alpha);
+		//CG_AddParticleToScene (p, p->org, alpha);
 
 	}
 
@@ -2499,7 +2829,10 @@ void CG_LFX_Smoke (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 		p->vel[j] += ((crandom() * (spread)) - (spread/2));
 		}
 
-	p->airfriction = 0.2;
+	p->airfriction = 1.6f;
+	p->bounce = 1.7f;
+	p->rollvel = crandom() * 40 - 20;
+	p->rollfriction = 0.7;
 	}
 }
 
@@ -2538,7 +2871,7 @@ void CG_LFX_Smoke2 (vec3_t org, vec3_t dir, float spread, float speed, vec4_t co
 	// Manage random roll and 
 	p->rotate = qtrue;
 	p->roll = crandom()*179;
-	
+/*	
 	p->cols[0][0] = color1[0]; 
 	p->cols[1][0] = color1[1];
 	p->cols[2][0] = color1[2];
@@ -2553,6 +2886,33 @@ void CG_LFX_Smoke2 (vec3_t org, vec3_t dir, float spread, float speed, vec4_t co
 	p->cols[1][2] = color3[1];
 	p->cols[2][2] = color3[2];
 	p->cols[3][2] = color3[3];
+
+	p->cols[0][3] = color4[0]; 
+	p->cols[1][3] = color4[1];
+	p->cols[2][3] = color4[2];
+	p->cols[3][3] = color4[3];
+
+	p->cols[0][4] = color5[0]; 
+	p->cols[1][4] = color5[1];
+	p->cols[2][4] = color5[2];
+	p->cols[3][4] = color5[3];
+
+*/
+
+	p->cols[0][0] = 1.0; 
+	p->cols[1][0] = 1.0;
+	p->cols[2][0] = 1.0;
+	p->cols[3][0] = 0.0;
+
+	p->cols[0][1] = 1.0; 
+	p->cols[1][1] = 1.0;
+	p->cols[2][1] = 1.0;
+	p->cols[3][1] = 1.0;
+
+	p->cols[0][2] = 1.0; 
+	p->cols[1][2] = 1.0;
+	p->cols[2][2] = 1.0;
+	p->cols[3][2] = 1.0;
 
 	p->cols[0][3] = color4[0]; 
 	p->cols[1][3] = color4[1];
@@ -2588,10 +2948,14 @@ void CG_LFX_Smoke2 (vec3_t org, vec3_t dir, float spread, float speed, vec4_t co
 		p->vel[j] += ((crandom() * (spread)) - (spread/2));
 		}
 
-	// Manage the Air Friction hack.
-
-	p->airfriction = 0.2;
 	}
+
+	//p->rollvel = crandom() * (50 - 100)*DotProduct(p->vel);
+	p->rollvel = crandom() * ((p->vel[0]+p->vel[1]+p->vel[2])/6) - ((p->vel[0]+p->vel[1]+p->vel[2])/3);
+	p->rollfriction = 2;
+	p->airfriction = 3.7f;
+	p->accel[2] = (PARTICLE_GRAVITY*1.3);
+	p->bounce = 3.5f;
 }
 
 
@@ -2697,7 +3061,7 @@ void CG_LFX_Shock (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 	//p->accel[0] = p->accel[1] = p->accel[2] = 0;
 	//p->accel[2] = -(PARTICLE_GRAVITY / 2);
 
-	p->airfriction = 0.2;
+	p->airfriction = 0;
 	}
 }
 
@@ -2722,7 +3086,127 @@ void CG_LFX_Spark (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 	p->endtime = cg.time + duration;
 	p->startfade = cg.time;
 	
-	p->color = GREY75;
+	p->color = LFXSPARK;
+	//p->color = EMISIVEFADE;
+	p->alpha = 1.0f;
+	p->alphavel = 0.0f;
+ 	//p->qolor = (color & ~7) + (rand() & 7);
+	p->height = p->width = scaleup;
+
+	p->endheight = p->height;
+	p->endwidth = p->width;
+
+
+	p->rotate = qfalse; // sparks don't rotate
+	p->roll = 0;	// sparks don't roll
+	
+
+	p->accel[0] =	p->accel[1] =	p->accel[2] = 0;
+
+	p->cols[0][0] = color1[0]; 
+	p->cols[1][0] = color1[1];
+	p->cols[2][0] = color1[2];
+	p->cols[3][0] = color1[3];
+
+	p->cols[0][1] = color2[0]; 
+	p->cols[1][1] = color2[1];
+	p->cols[2][1] = color2[2];
+	p->cols[3][1] = color2[3];
+
+	p->cols[0][2] = color3[0]; 
+	p->cols[1][2] = color3[1];
+	p->cols[2][2] = color3[2];
+	p->cols[3][2] = color3[3];
+
+	p->cols[0][3] = color4[0]; 
+	p->cols[1][3] = color4[1];
+	p->cols[2][3] = color4[2];
+	p->cols[3][3] = color4[3];
+
+	p->cols[0][4] = color5[0]; 
+	p->cols[1][4] = color5[1];
+	p->cols[2][4] = color5[2];
+	p->cols[3][4] = color5[3];
+
+	// Manage blending Functions
+	if (blendfunc == 1)
+	p->pshader = cgs.media.addball;
+	else if (blendfunc == 2)
+	p->pshader = cgs.media.modball;
+	else if (blendfunc == 3)
+	p->pshader = cgs.media.subball;
+	else if (blendfunc == 666)
+	p->pshader = cgs.media.alfball;
+	else
+	p->pshader = cgs.media.alfball;
+
+
+
+
+	//p->pshader = cgs.media.whiteShader;
+//
+
+	p->type = P_LFX;
+	
+	VectorCopy(org, p->org);
+
+
+	// Manage spread of origin and velocity
+	 for (j = 0; j < 3; j++) {
+		float sped = speed * (1 + crandom()) + (speed * 0.3f);
+		//p->org[j] = org[j] + ((crandom() * (spread / 8)) - (spread/16));
+		p->org[j] = org[j];
+
+		p->vel[j] = (dir[j]) * sped;
+		p->vel[j] += ((crandom() * (spread)) - (spread/2));
+
+	//	p->vel[j] *= crandom();
+
+
+		}
+		// a little kick up
+		p->vel[2] += (speed * 0.4f);
+
+
+	
+	p->accel[0] = p->accel[1] = p->accel[2] = 0;
+	p->accel[2] = -(800 * 0.5f);	// TODO: insert proper gravity.
+
+	// prepare the initial stretch frame
+
+	p->airfriction = 1.6f;
+	p->bounce = 1.6f;
+	if (blendfunc == 666)
+	p->bounce = 666;	// instantly make a red decal and kill itself. for blood
+	}
+//	VectorCopy(p->org,p->torg[0]); // a org to stretch from.
+
+}
+
+
+
+
+void CG_LFX_Burst (vec3_t org, vec3_t dir, float spread, float speed, vec4_t color1, vec4_t color2, vec4_t color3, vec4_t color4, vec4_t color5, int count, int duration, float scaleup, int blendfunc)
+{
+	int i, j;
+	int cont = 50;
+	cparticle_t	*p;
+
+	cont = count;
+
+    for (i = 0; i < cont; i++) {
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+	p->time = cg.time;
+	
+	p->endtime = cg.time + duration;
+	p->startfade = cg.time;
+	
+	p->color = LFXBURST;
 	//p->color = EMISIVEFADE;
 	p->alpha = 1.0f;
 	p->alphavel = 0.0f;
@@ -2777,40 +3261,30 @@ void CG_LFX_Spark (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 	p->pshader = cgs.media.alfball;
 
 	p->type = P_LFX;
-	
+
 	VectorCopy(org, p->org);
 
 
 	// Manage spread of origin and velocity
 	 for (j = 0; j < 3; j++) {
 		float sped = speed * (1 + crandom()) + (speed * 0.3f);
-		//p->org[j] = org[j] + ((crandom() * (spread / 8)) - (spread/16));
-		p->org[j] = org[j];
+	//	//p->org[j] = org[j] + ((crandom() * (spread / 8)) - (spread/16));
+	//	p->org[j] = org[j];
 
-		p->vel[j] = (dir[j]) * sped;
-		p->vel[j] += ((crandom() * (spread)) - (spread/2));
-
-	//	p->vel[j] *= crandom();
-
+	//	p->vel[j] = (dir[j]) * sped;
+		p->vel[j] =  ((crandom() * (spread)) - (spread/2)) / 360;
+		p->vel[j] *= sped;
 
 		}
-		// a little kick up
-		p->vel[2] += (speed * 0.4f);
-
 
 	
 	p->accel[0] = p->accel[1] = p->accel[2] = 0;
-	p->accel[2] = -(800 * 0.5f);	// TODO: insert proper gravity.
 
 	// prepare the initial stretch frame
 
-	VectorCopy(p->org, p->stretchorg);
-	//VectorAdd(p->org,p->vel,p->org);
-
-	p->airfriction = 0.5f;
-	p->bounce = 1.2f;
-	if (blendfunc == 666)
-	p->bounce = 666;	// instantly make a red decal and kill itself. for blood
+	p->airfriction = 1.6f;
+	p->bounce = 2.0f;
+	VectorCopy(p->org,p->torg[0]); // a org to stretch from.
 	}
 }
 
@@ -2828,9 +3302,99 @@ void CG_LFX_Spark (vec3_t org, vec3_t dir, float spread, float speed, vec4_t col
 
 
 
+// give some turbulence to smokes
+void CG_LFX_PushSmoke (vec3_t there, float force)
+{
+	cparticle_t *p, *next;
+	float	rad;
+	float	*org;
+	vec3_t	eorg;
+	int		i, j;
+	float vlen;
+
+	org = there;
+	rad = force;
+	force /= 255;
+	for (p=active_particles ; p ; p=next)
+	{
+
+		next = p->next;
+		if (p->color == EMISIVEFADE)
+		{
+			trace_t trace;
+			float langth;
+			//CG_Printf ("we got smoke's\n");
+
+			CG_Trace (&trace, there, NULL, NULL, p->org, -1, CONTENTS_SOLID);
+			if (trace.fraction < 1)continue; // don't!
+			else
+			{
+				vec3_t thepush;
+				//CG_Printf ("we got smoke's TO PUSH\n");
+				thepush[0] = there[0] - p->org[0];
+				thepush[1] = there[1] - p->org[1];
+				thepush[2] = there[2] - p->org[2];
+
+				//langth = VectorLength(thepush) / force;
+
+				//force *= -1; // whoop's
+				//force = -langth;
+
+				p->vel[0] -= (thepush[0] * force);
+				p->vel[1] -= (thepush[1] * force);
+				p->vel[2] -= (thepush[2] * force);
+			}
+
+		}
+	}
+
+}
 
 
 
+
+void CG_LetsBounce ( cparticle_t *p)
+{
+
+	// leilei - bounce physics
+	if(p->bounce > 0)
+		{
+			trace_t	trace;
+			float dist;
+			vec3_t invtrace;	// used to move the particle from the plane we hit
+			vec3_t oldorg;
+			oldorg[0] = p->org[0] - p->vel[0];
+			oldorg[1] = p->org[1] - p->vel[1];
+			oldorg[2] = p->org[2] - p->vel[2];
+	
+			// Do the trace of truth
+			CG_Trace (&trace, oldorg, NULL, NULL, p->org, -1, CONTENTS_SOLID);
+			if (!(trace.entityNum < (MAX_ENTITIES - 1))) // may only land on world
+			{
+				if (trace.fraction < 1){
+				
+						VectorCopy(trace.endpos, p->org);	// particle where we've hit from
+					
+						if (p->bounce == 666){ // blood
+						 CG_ImpactMark( cgs.media.bloodMarkShader, p->org, trace.plane.normal, random()*360,1,1,1, p->alpha, qtrue, 15, qfalse );
+							p->endtime = p->time; // time to die!
+						}
+
+						if (p->bounce < 0)
+						{
+							// bounce -1 means remove on impact
+							p->endtime = cg.time;
+						}
+
+						// anything else - bounce off solid
+						dist = DotProduct(p->vel, trace.plane.normal) * -p->bounce;
+						VectorMA(p->vel, dist, trace.plane.normal, p->vel);
+
+					}
+			}	
+	}
+
+}
 
 
 
@@ -2949,8 +3513,4 @@ void CG_QarticleExplosion(vec3_t org)
 	}
     }
 }
-
-
-
-
 

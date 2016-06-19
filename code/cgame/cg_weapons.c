@@ -472,7 +472,7 @@ static void CG_LeiSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 	up[1] = 5 - 10 * crandom();
 	up[2] = 8 - 5 * crandom();
 
-	step = 18;
+	step = 16;
 
 	es = &ent->currentState;
 	startTime = ent->trailTime;
@@ -500,6 +500,9 @@ static void CG_LeiSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 	}
 
 	for ( ; t <= ent->trailTime ; t += step ) {
+
+		if (cg_leiEnhancement.integer == 1)
+		{
 		BG_EvaluateTrajectory( &es->pos, t, lastPos );
 		therando = crandom() * 4;
 		
@@ -511,6 +514,23 @@ static void CG_LeiSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 		// use the optimized local entity add
 		smoke->leType = LE_MOVE_SCALE_FADE;
 		//smoke->trType = TR_GRAVITY;
+		}
+		else	if (cg_leiEnhancement.integer == 2000)
+		{
+			vec3_t colory,colory2,colory3,colory4;
+			BG_EvaluateTrajectory( &es->pos, t, lastPos );
+			therando = crandom() * 4;
+			colory[0] = 1.0; colory[1] = 1.0; colory[2] = 1.0; colory[3] = 0.6;
+			colory2[0] = 1.0; colory2[1] = 1.0; colory2[2] = 1.0; colory2[3] = 0.3;
+			colory3[0] = 1.0; colory3[1] = 1.0; colory3[2] = 1.0; colory3[3] = 0.2;
+			colory4[0] = 1.0; colory4[1] = 1.0; colory4[2] = 1.0; colory4[3] = 0.0;
+		
+		//	CG_LFX_Smoke (lastPos, NULL, 1, 1, colory, colory2, colory3, colory4, colory4, 12, 3350,11, 4);
+		CG_LFX_Smoke2 (lastPos, NULL, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 4);
+		CG_LFX_Smoke2 (lastPos, NULL, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 4);
+
+
+		}
 	}
 
 }
@@ -3633,6 +3653,12 @@ void CG_LFX_HitSpark (vec3_t origin, float damage) {
 		colory2[0] = 1.0; colory2[1] = 1.0; colory2[2] = 0.7; colory2[3] = 0.9;
 		colory3[0] = 0.4; colory3[1] = 0.3; colory3[2] = 0.2; colory3[3] = 0.7;
 		colory4[0] = 0.1; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+
+		colory[0] = 1.0; colory[1] = 1.0; colory[2] = 1.0; colory[3] = 1.0;
+		colory2[0] = 1.0; colory2[1] = 1.0; colory2[2] = 1.0; colory2[3] = 1.0;
+		colory3[0] = 1.0; colory3[1] = 1.0; colory3[2] = 1.0; colory3[3] = 1.0;
+		colory4[0] = 1.0; colory4[1] = 1.0; colory4[2] = 1.0; colory4[3] = 1.0;
+
 	
 		CG_LFX_Smoke (sprOrg, sprVel, 62, 2, colory, colory2, colory3, colory4, colory4, 72, 200,84, 1);
 		CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 600, 74, 1);
@@ -3660,7 +3686,7 @@ void CG_LFX_HitSpark (vec3_t origin, float damage) {
 
 }
 
-
+void CG_LFX_PushSmoke (vec3_t there, float force);
 void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
 	qhandle_t		mod;
 	qhandle_t		mark;
@@ -3784,19 +3810,51 @@ void CG_LFX_RocketBoom (vec3_t origin, vec3_t dir) {
 		VectorMA( origin, 12, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 
+		CG_LFX_Burst (sprOrg, sprVel, 175, 15, colory, colory2, colory3, colory4, colory4, 7, 340, 22, 1);
+
 		CG_LFX_Spark (sprOrg, sprVel, 175, 5, colory, colory2, colory3, colory4, colory4, 25, 1240, 0.8f, 1);
 
-	//	CG_LFX_Spark (sprOrg, sprVel, 175, 0.1f, colory, colory2, colory3, colory4, colory4, 5, 340, 7, 1);
+		//CG_LFX_Spark (sprOrg, sprVel, 175, 0.1f, colory, colory2, colory3, colory4, colory4, 5, 340, 7, 1);
 
 
 
-/*
+
 		// Aftersmoke
 		colory[0] = 0.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 0.0;
 		colory2[0] = 0.2; colory2[1] = 0.2; colory2[2] = 0.2; colory2[3] = 0.2;
 		colory3[0] = 0.9; colory3[1] = 0.9; colory3[2] = 0.9; colory3[3] = 0.5;
 		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
 		VectorMA( origin, 32, dir, sprOrg );
+/*
+		//CG_LFX_Smoke2 (sprOrg, sprVel, 126, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke2 (sprOrg, sprVel, 33, 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 15000), 2, 8+ (random()*6), 4);
+	//	CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 4);
+		//CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+	//	CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 144, 15500,24, 4); // test smoke for turbulence
+*/
+	//	CG_LFX_Smoke2 (sprOrg, sprVel, 33, 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 15000), 2, 8+ (random()*6), 4);
+	CG_LFX_PushSmoke (sprOrg, 300);
+		//CG_LFX_Smoke2 (sprOrg, sprVel, 55, 2+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 64, 800 + (random()*55000), 16, 50+ (random()*6), 4);
+
+		colory[0] = 0.7; colory[1] = 0.7; colory[2] = 0.7; colory[3] = 0.0;
+		colory2[0] = 0.7; colory2[1] = 0.7; colory2[2] = 0.7; colory2[3] = 0.5;
+		colory3[0] = 0.6; colory3[1] = 0.6; colory3[2] = 0.6; colory3[3] = 0.8;
+		colory4[0] = 0.6; colory4[1] = 0.6; colory4[2] = 0.6; colory4[3] = 0.0;
+	
+
+		CG_LFX_Smoke2 (sprOrg, sprVel, 19 + (random()*122), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 1700 + (random()*38000), 29,93+ (random()*6), 4);
+
+	// TODO: Turbulent boom
+	
+/*
 		CG_LFX_Smoke (sprOrg, sprVel, 4, 0.2, colory, colory2, colory3, colory4, colory4, 144, 5500,24, 3);
 		CG_LFX_Smoke (sprOrg, sprVel, 9, 0.2, colory, colory2, colory3, colory4, colory4, 44, 3500,24, 3);
 		CG_LFX_Smoke (sprOrg, sprVel, 12, 0.2, colory, colory2, colory3, colory4, colory4, 24, 1500,24, 3);
@@ -4294,7 +4352,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		VectorScale( dir, 1, sprVel );
 	
 		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 1);
-		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 1);
+
 
 			// Sparks
 				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
@@ -4333,9 +4391,14 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		//CG_LFX_Smoke (sprOrg, sprVel, 32, 0.54, colory, colory2, colory3, colory4, colory4, 42, 700, 24, 0);
 
 
-		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
-		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
-		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 7, sprVel );
+	//	CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+	//	CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 6.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+
+
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 300 + (random()*2000), 2, 8+ (random()*6), 4);
 			// shockwave 
 		
 				colory[0] = 0.9; colory[1] = 0.8; colory[2] = 1.0; colory[3] = 1.0;
@@ -4355,7 +4418,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 				VectorMA( origin, 1, dir, sprOrg );
 				VectorScale( dir, 1, sprVel );
 				CG_LFX_Spark (sprOrg, sprVel, 25, 85, colory, colory2, colory3, colory4, colory4, 5, 5540, 0.5f, 1);
-
+				//CG_LFX_PushSmoke (sprOrg, 44);
 			
 
 		
@@ -4532,9 +4595,9 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 			duration = 10;	// bit more instant
 			radius = 1;
 		//CG_LFX_Smoke (sprOrg, sprVel, 3, 85, colory, colory2, colory3, colory4, colory4, 50, 1200,12, 0);
-		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
-
-CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 65+ (random()*56), colory, colory2, colory3, colory4, colory4, 3, 100 + (random()*200), 3, 8+ (random()*12), 0);
+		//CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 800 + (random()*2000), 2, 8+ (random()*6), 0);
+/*
+//CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 65+ (random()*56), colory, colory2, colory3, colory4, colory4, 3, 100 + (random()*200), 3, 8+ (random()*12), 0);
 	
 
 			// shockwave 
@@ -4562,6 +4625,31 @@ CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 65+ (random()*56), colory, colo
 				CG_LFX_Spark (sprOrg, sprVel, 25, 385, colory, colory2, colory3, colory4, colory4, 3, 50, 4, 1);
 					break;
 
+*/
+
+		CG_LFX_Smoke2 (sprOrg, sprVel, 2 + (random()*6), 3.54+ (random()*8.7), colory, colory2, colory3, colory4, colory4, 1, 300 + (random()*2000), 2, 8+ (random()*6), 4);
+			// shockwave 
+		
+				colory[0] = 0.9; colory[1] = 0.8; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 0.7; colory2[1] = 0.5; colory2[2] = 0.2; colory2[3] = 0.9;
+				colory3[0] = 0.1; colory3[1] = 0.1; colory3[2] = 0.1; colory3[3] = 0.7;
+				colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 4, dir, sprOrg );
+				VectorScale( dir, 64, sprVel );
+	
+				CG_LFX_Shock (origin, dir, 0, 32, colory, colory2, colory3, colory4, colory4, 1, 200, 50,1);
+
+			// Sparks
+				colory[0] = 1; colory[1] = 1; colory[2] = 1.0; colory[3] = 1.0;
+				colory2[0] = 1; colory2[1] = 1; colory2[2] = 0.8; colory2[3] = 0.9;
+				colory3[0] = 0.7; colory3[1] = 0.5; colory3[2] = 0.2; colory3[3] = 0.7;
+				colory4[0] = 0.1; colory4[1] = 0.06; colory4[2] = 0.0; colory4[3] = 0.0;
+				VectorMA( origin, 1, dir, sprOrg );
+				VectorScale( dir, 1, sprVel );
+				CG_LFX_Spark (sprOrg, sprVel, 95, 325, colory, colory2, colory3, colory4, colory4, 5, 140, 0.5f, 1);
+				CG_LFX_Spark (sprOrg, sprVel, 95, 85, colory, colory2, colory3, colory4, colory4, 1, 1540, 0.5f, 1);
+				//CG_LFX_PushSmoke (sprOrg, 44);
+				break;
 
 
 		}
