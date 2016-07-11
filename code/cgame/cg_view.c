@@ -281,24 +281,26 @@ static void CG_OffsetThirdPersonView( void ) {
 	}
 
 	if (cg_cameramode.integer && (cg.predictedPlayerState.stats[STAT_HEALTH] > 0))		// leilei this mode is off to the player's right
-	{
-	//if ( focusAngles[PITCH] > 33 ) {
-	//	focusAngles[PITCH] = 33;		// don't go too far overhead
-	//}
+	{											// and should look towards a 3d crosshair
 
-//	 if ( focusAngles[PITCH] < -45 ) {
-	//	focusAngles[PITCH] = -45;		// don't go too far overhead
-//	}
+
 	AngleVectors( focusAngles, forward, NULL, NULL );
-
 	VectorMA( cg.refdef.vieworg, FOCUS_DISTANCE, forward, focusPoint );
-
 	VectorCopy( cg.refdef.vieworg, view );
 
 
 	view[2] += 3;
 
 	cg.refdefViewAngles[PITCH] *= 0.5;
+
+	// hmm HMMhmmhHMHMHMhmhmh
+
+	//cg.refdefViewAngles[YAW] -= cg_leiDebug.value;
+	AngleVectors( focusAngles, forward, NULL, NULL );
+	VectorMA( cg.refdef.vieworg, FOCUS_DISTANCE, forward, focusPoint );
+	VectorCopy( cg.refdef.vieworg, view );
+
+
 
 	AngleVectors( cg.refdefViewAngles, forward, right, up );
 
@@ -316,7 +318,10 @@ static void CG_OffsetThirdPersonView( void ) {
 		focusDist = 1;	// should never happen
 	}
 	cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2( focusPoint[2], focusDist );
-	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
+
+	// leilei - make it look to a 3d cursor
+
+	//cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;	 // can't do this right now.
 
 	{
 	vec3_t			forward, up;
@@ -782,36 +787,35 @@ static int CG_CalcViewValues( void ) {
 	if ( cg.renderingThirdPerson ) {
 		// back away from character
 		CG_OffsetThirdPersonView();
+
 	} else {
 		// offset for local bobbing and kicks
 		CG_OffsetFirstPersonView();
 	}
 
-if (cg_cameraEyes.integer && !cg.renderingThirdPerson){
+	// leilei - View-from-the-model-eyes feature, aka "fullbody awareness" lol
+	if (cg_cameraEyes.integer && !cg.renderingThirdPerson){
 		vec3_t		forward, right, up;	
 		cg.refdefViewAngles[ROLL] = headang[ROLL];
 		cg.refdefViewAngles[PITCH] = headang[PITCH];
 		cg.refdefViewAngles[YAW] = headang[YAW];
 
 		AngleVectors( headang, forward, NULL, up );
-	if (cg_cameraEyes.integer == 2){
-		VectorMA( headpos, 0, forward, headpos );
-		VectorMA( headpos, 4, up, headpos );
-	}
-	else
-	{
-		VectorMA( headpos, cg_cameraEyes_Fwd.value, forward, headpos );
-		VectorMA( headpos, cg_cameraEyes_Up.value, up, headpos );
-	}
-
-	//	cg.refdef.vieworg[0] = headpos[0];
-	//	cg.refdef.vieworg[1] = headpos[1];
-	//	cg.refdef.vieworg[2] = headpos[2];
+		if (cg_cameraEyes.integer == 2){
+			VectorMA( headpos, 0, forward, headpos );
+			VectorMA( headpos, 4, up, headpos );
+		}
+		else
+		{
+			VectorMA( headpos, cg_cameraEyes_Fwd.value, forward, headpos );
+			VectorMA( headpos, cg_cameraEyes_Up.value, up, headpos );
+		}
 
 		cg.refdef.vieworg[0] = ps->origin[0] + headpos[0];
 		cg.refdef.vieworg[1] = ps->origin[1] + headpos[1];
 		cg.refdef.vieworg[2] = ps->origin[2] + headpos[2];
-		}
+		
+	}
 
 	// position eye reletive to origin
 	AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
@@ -962,7 +966,6 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	if ( !cg.hyperspace ) {
 		CG_AddPacketEntities();			// adter calcViewValues, so predicted player state is correct
 		CG_AddMarks();
-		CG_AddParticles ();
 		CG_AddLocalEntities();
 	}
 	CG_AddViewWeapon( &cg.predictedPlayerState );

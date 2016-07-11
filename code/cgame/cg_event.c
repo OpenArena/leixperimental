@@ -937,15 +937,19 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_PLAYER_TELEPORT_IN:
 		DEBUGNAME("EV_PLAYER_TELEPORT_IN");
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(18, cent->lerpOrigin, cent->currentState.angles);
+		else
 		CG_SpawnEffect( position);
-		// TODO: 1996 splash effect, pre 4.01 splash effect
 		break;
 
 	case EV_PLAYER_TELEPORT_OUT:
 		DEBUGNAME("EV_PLAYER_TELEPORT_OUT");
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleOutSound );
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(18, cent->lerpOrigin, cent->currentState.angles);
+		else
 		CG_SpawnEffect(  position);
-		// TODO: 1996 splash effect, pre 4.01 splash effect
 		break;
 
 	case EV_ITEM_POP:
@@ -957,19 +961,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_ITEM_RESPAWN");
 		cent->miscTime = cg.time;	// scale up from this
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.respawnSound );
-/*	// might have to cvar this thing
-		if (cg_leiEnhancement.integer == 2000) 
-		{
-			vec4_t colory, colory2 ,colory3, colory4;
-		colory[0] = 0.0; colory[1] = 0.0; colory[2] = 0.0; colory[3] = 1.0;
-		colory2[0] = 1.0; colory2[1] = 1.0; colory2[2] = 0.7; colory2[3] = 0.9;
-		colory3[0] = 0.0; colory3[1] = 0.2; colory3[2] = 0.1; colory3[3] = 0.7;
-		colory4[0] = 0.0; colory4[1] = 0.0; colory4[2] = 0.0; colory4[3] = 0.0;
 
-		CG_LFX_Smoke (cent->lerpOrigin, NULL, 24, 0, colory, colory2, colory3, colory4, colory4, 32, 800,34, 1);
-
-		}
-*/
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(41, cent->lerpOrigin, cent->currentState.angles);
 		break;
 
 	case EV_GRENADE_BOUNCE:
@@ -1003,6 +997,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_OBELISKEXPLODE:
 		DEBUGNAME("EV_OBELISKEXPLODE");
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(17, cent->lerpOrigin, cent->currentState.angles);
+		else
 		CG_ObeliskExplode( cent->lerpOrigin, es->eventParm );
 		break;
 	case EV_OBELISKPAIN:
@@ -1011,6 +1008,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_INVUL_IMPACT:
 		DEBUGNAME("EV_INVUL_IMPACT");
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(42, cent->lerpOrigin, cent->currentState.angles);
+		else
 		CG_InvulnerabilityImpact( cent->lerpOrigin, cent->currentState.angles );
 		break;
         case EV_JUICED:
@@ -1333,6 +1333,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		}
 		CG_GibPlayer( cent->lerpOrigin );
 			// TODO: New function option for a more directional gib effect
+		if (cg_leiEnhancement.integer) 
+			trap_R_LFX_ParticleEffect(16, cent->lerpOrigin, cent->currentState.angles);
+
 		break;
 
 	case EV_STOPLOOPINGSOUND:

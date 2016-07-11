@@ -1412,7 +1412,6 @@ static void CG_RegisterGraphics( void ) {
 //	trap_R_RegisterModel( "models/players/kyonshi/head.md3" );
 
 #endif
-	CG_ClearParticles ();
 /*
 	for (i=1; i<MAX_PARTICLES_AREAS; i++)
 	{
@@ -1459,7 +1458,7 @@ CG_RegisterClients
 static void CG_RegisterClients( void ) {
 	int		i;
 
-	CG_LoadingClient(cg.clientNum);
+	CG_LoadingClient(cg.clientNum); // leilei - test for performance.
 	CG_NewClientInfo(cg.clientNum);
 
 	for (i=0 ; i<MAX_CLIENTS ; i++) {
@@ -2567,6 +2566,11 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	trap_Cvar_Set( "ui_loading", "0" );
 	cg.consoleValid = qtrue;
 #endif
+
+	// leilei - particles
+
+//	CG_InitParticles();
+//	CG_QlearParticles ();
 // end loadingscreen
 }
 

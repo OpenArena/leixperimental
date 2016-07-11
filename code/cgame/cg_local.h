@@ -440,6 +440,8 @@ typedef struct weaponInfo_s {
 	sfxHandle_t		readySound;
 	sfxHandle_t		firingSound;
 	qboolean		loopFireSound;
+	int			lfx;	
+	int			lfxdrawn;	
 } weaponInfo_t;
 
 
@@ -2004,21 +2006,53 @@ qboolean	trap_GetEntityToken( char *buffer, int bufferSize );
 //void	CG_InitParticles (void);		// leilei - q1 code
 
 
-void	CG_ClearParticles (void);
-void	CG_AddParticles (void);
-void	CG_ParticleSnow (qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb, float range, int snum);
-void	CG_ParticleSmoke (qhandle_t pshader, centity_t *cent);
-void	CG_AddParticleShrapnel (localEntity_t *le);
-void	CG_ParticleSnowFlurry (qhandle_t pshader, centity_t *cent);
-void	CG_ParticleBulletDebris (vec3_t	org, vec3_t vel, int duration);
-void	CG_ParticleSparks (vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
-void	CG_ParticleDust (centity_t *cent, vec3_t origin, vec3_t dir);
-void	CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, float alpha);
-void	CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duration, int sizeStart, int sizeEnd);
 extern qboolean		initparticles;
-int CG_NewParticleArea ( int num );
 
 extern int wideAdjustX;
+
+void	trap_R_LFX_ParticleEffect( int effect, const vec3_t origin, const vec3_t velocity ); // leilei - particle effects. this allows to pick an effect, such as..
+
+#define	LFX_SMOKEPUFF		1;
+#define	LFX_BULLETHIT		2;
+#define	LFX_SHOTGUNHIT		3;
+#define	LFX_GRENADEHIT		4;
+#define	LFX_ROCKETHIT		5;
+#define	LFX_PLASMAHIT		6;
+#define	LFX_RAILHIT		7;
+#define	LFX_LIGHTNINGHIT	8;
+#define	LFX_BFGHIT		9;
+#define	LFX_NAILHIT		10;
+#define	LFX_PROXHIT		11;
+#define	LFX_CHAINHIT		12;
+#define	LFX_GRAPPLEHIT		13;
+#define	LFX_BLOODSPRAY		14;
+#define	LFX_BLOODSPURT		15;
+#define	LFX_GIBBING		16;
+#define	LFX_COREDESTROY		17;
+#define	LFX_TELEPORT		18;
+#define	LFX_WATERSPLASH		19;
+#define	LFX_WATERSPLASHBIG 	20;
+#define	LFX_SPARK		21;
+#define	LFX_RAILHIT2		30; // next 10 are alt colors
+#define	LFX_RAILHIT6		40;
+#define	LFX_ITEMSPAWN		41;
+#define	LFX_INVULHIT		42;
+#define	LFX_LIGHTNINGBEAM	43;
+#define	LFX_HOOKBEAMLOOSE	44;
+#define	LFX_HOOKBEAMTIGHT	45;
+#define	LFX_BUBBLETRAIL		46;
+#define	LFX_GIBTRAIL		47;
+
+#define LFX_FLASHMGUN		62;
+#define LFX_FLASHSHOTGUN	63;
+#define LFX_FLASHGRENADE	64;
+#define LFX_FLASHROCKET		65;
+#define LFX_FLASHPLASMA		66;
+#define LFX_FLASHRAIL		67;
+#define LFX_FLASHBFG		68;
+#define LFX_FLASHNAIL		69;
+#define LFX_FLASHPROX		70;
+#define LFX_FLASHVULCAN		71;
 
 // LEILEI ENHANCEMENT
 
