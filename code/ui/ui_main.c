@@ -1366,6 +1366,20 @@ void UI_LoadMenus(const char *menuFile, qboolean reset) {
 void UI_Load(void) {
 	char lastName[1024];
   menuDef_t *menu = Menu_GetFocused();
+	if (!ui_introPlayed.integer) // load a menu with little overhead with information about legal notices etc
+	{
+		char *menuSet = "ui/intromenus.txt";
+
+		String_Init();
+
+		UI_LoadMenus(menuSet, qtrue);
+		Menus_CloseAll();
+		Menus_ActivateByName(lastName);
+
+	}
+	else	// intro skipped, or read, etc
+	{
+
 	char *menuSet = UI_Cvar_VariableString("ui_menuFiles");
 	if (menu && menu->window.name) {
 		strcpy(lastName, menu->window.name);
@@ -1376,17 +1390,13 @@ void UI_Load(void) {
 
 	String_Init();
 
-#ifdef PRE_RELEASE_TADEMO
-	UI_ParseGameInfo("demogameinfo.txt");
-#else
 	UI_ParseGameInfo("gameinfo.txt");
 	UI_LoadArenas();
-#endif
 
 	UI_LoadMenus(menuSet, qtrue);
 	Menus_CloseAll();
 	Menus_ActivateByName(lastName);
-
+	}
 }
 
 static const char *handicapValues[] = {"None","95","90","85","80","75","70","65","60","55","50","45","40","35","30","25","20","15","10","5",NULL};
@@ -3707,10 +3717,58 @@ static void UI_StartSkirmish(qboolean next, char *name) {
 	}
 
 	delay = 500;
-
+			
 	if (g == GT_TOURNAMENT) {
 		trap_Cvar_Set("sv_maxClients", "2");
 		Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %f "", %i \n", uiInfo.mapList[ui_currentMap.integer].opponentName, skill, delay);
+		trap_Cmd_ExecuteText( EXEC_APPEND, buff );
+	}
+	else if (g == GT_FFA) { // leilei - parse the opponentname as a list of bots instead like q3_ui's arena parsing
+		char		*p;
+		char		*bot;
+		const char	*botInfo;
+		char		bots[MAX_INFO_STRING];
+		char		botnames[16][16];
+		int			count, n;
+		// Make bot list from opponentName
+		trap_Cvar_Set("sv_maxClients", "16");
+		trap_Cvar_Set("g_warmup", "0");
+		Q_strncpyz( bots, uiInfo.mapList[ui_currentMap.integer].opponentName, sizeof(bots) );
+	        //        Com_sprintf( buff, sizeof(buff), "wait\n", bot, skill, delay);
+		p = &bots[0];
+		while( *p && count < 16 ) {
+
+			//skip spaces
+			while( *p && *p == ' ' ) {
+				p++;
+			}
+			if( !p ) {
+				break;
+			}
+	
+			// mark start of bot name
+			bot = p;
+	
+			// skip until space of null
+			while( *p && *p != ' ' ) {
+				p++;
+			}
+			if( *p ) {
+				*p++ = 0;
+			}
+	
+			botInfo = UI_GetBotInfoByName( bot );
+			bot = Info_ValueForKey( botInfo, "name" );
+	                Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %f "", %i \n", bot, skill, delay);
+			trap_Cmd_ExecuteText( EXEC_APPEND, buff );
+			Q_strncpyz( botnames[count], bot, sizeof(botnames[count]) );
+			delay += 50;
+			//Com_Printf("The bot %s has been queued\n", bot);
+			count++;
+		}
+
+
+		Com_sprintf( buff, sizeof(buff), "wait ; \n", uiInfo.mapList[ui_currentMap.integer].opponentName, skill, delay);
 		trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 	} else {
 		temp = uiInfo.mapList[ui_currentMap.integer].teamMembers * 2;
@@ -5259,6 +5317,10 @@ static const char *UI_FeederItemText(float feederID, int index, int column, qhan
 		if (index >= 0 && index < uiInfo.q3HeadCount) {
 			return uiInfo.q3HeadNames[index];
 		}
+	} else if (feederID == FEEDER_Q3HEADS_FULL) {
+		if (index >= 0 && index < uiInfo.q3HeadCount2) {
+			return uiInfo.q3HeadNames2[index];
+		}
 	} else if (feederID == FEEDER_MAPS || feederID == FEEDER_ALLMAPS) {
 		int actual;
 		return UI_SelectedMap(index, &actual);
@@ -5365,6 +5427,10 @@ static qhandle_t UI_FeederItemImage(float feederID, int index) {
     if (index >= 0 && index < uiInfo.q3HeadCount) {
       return uiInfo.q3HeadIcons[index];
     }
+  } else if (feederID == FEEDER_Q3HEADS_FULL) {
+    if (index >= 0 && index < uiInfo.q3HeadCount2) {
+      return uiInfo.q3HeadIcons2[index];
+    }
 	} else if (feederID == FEEDER_ALLMAPS || feederID == FEEDER_MAPS) {
 		int actual;
 		UI_SelectedMap(index, &actual);
@@ -5394,6 +5460,12 @@ static void UI_FeederSelection(float feederID, int index) {
     if (index >= 0 && index < uiInfo.q3HeadCount) {
       trap_Cvar_Set( "model", uiInfo.q3HeadNames[index]);
       trap_Cvar_Set( "headmodel", uiInfo.q3HeadNames[index]);
+			updateModel = qtrue;
+		}
+  } else if (feederID == FEEDER_Q3HEADS_FULL) {
+    if (index >= 0 && index < uiInfo.q3HeadCount2) {
+      trap_Cvar_Set( "model", uiInfo.q3HeadNames2[index]);
+      trap_Cvar_Set( "headmodel", uiInfo.q3HeadNames2[index]);
 			updateModel = qtrue;
 		}
   } else if (feederID == FEEDER_MAPS || feederID == FEEDER_ALLMAPS) {
@@ -5785,9 +5857,9 @@ static qboolean MapList_Parse(char **p) {
   			//  uiInfo.mapList[uiInfo.mapCount].cinematic = trap_CIN_PlayCinematic(va("%s.roq",uiInfo.mapList[uiInfo.mapCount].mapLoadName), qfalse, qfalse, qtrue, 0, 0, 0, 0);
 			//}
   			uiInfo.mapList[uiInfo.mapCount].cinematic = -1;
-			uiInfo.mapList[uiInfo.mapCount].levelShot = trap_R_RegisterShaderNoMip(va("levelshots/%s_small", uiInfo.mapList[uiInfo.mapCount].mapLoadName));
+			//uiInfo.mapList[uiInfo.mapCount].levelShot = trap_R_RegisterShaderNoMip(va("levelshots/%s_small", uiInfo.mapList[uiInfo.mapCount].mapLoadName));
 			// leilei - We don't have _small levelshots, memory reasons
-			if (!uiInfo.mapList[uiInfo.mapCount].levelShot)
+			//if (!uiInfo.mapList[uiInfo.mapCount].levelShot)
 			uiInfo.mapList[uiInfo.mapCount].levelShot = trap_R_RegisterShaderNoMip(va("levelshots/%s", uiInfo.mapList[uiInfo.mapCount].mapLoadName));
 
 			if (uiInfo.mapCount < MAX_MAPS) {
@@ -5932,6 +6004,7 @@ static void UI_BuildQ3Model_List( void )
 	int		filelen;
 
 	uiInfo.q3HeadCount = 0;
+	uiInfo.q3HeadCount2 = 0;
 
 	// iterate directory of all player models
 	numdirs = trap_FS_GetFileList("models/players", "/", dirlist, 32768 ); // upped from 2048
@@ -5955,8 +6028,8 @@ static void UI_BuildQ3Model_List( void )
 			COM_StripExtension(fileptr, skinname, sizeof(skinname));
 
 			// look for icon_????
-			//if (Q_stricmpn(skinname, "icon_", 5) == 0 && !(Q_stricmp(skinname,"icon_blue") == 0 || Q_stricmp(skinname,"icon_red") == 0))
-			if (Q_stricmpn(skinname, "icon_", 5) == 0)	// leilei - show red blue anyway
+			if (Q_stricmpn(skinname, "icon_", 5) == 0 && !(Q_stricmp(skinname,"icon_blue") == 0 || Q_stricmp(skinname,"icon_red") == 0))
+			//if (Q_stricmpn(skinname, "icon_", 5) == 0)	// leilei - show red blue anyway
 
 			{
 				if (Q_stricmp(skinname, "icon_default") == 0) {
@@ -5974,6 +6047,39 @@ static void UI_BuildQ3Model_List( void )
 				if (!dirty) {
 					Com_sprintf( uiInfo.q3HeadNames[uiInfo.q3HeadCount], sizeof(uiInfo.q3HeadNames[uiInfo.q3HeadCount]), "%s", scratch);
                                     uiInfo.q3HeadIcons[uiInfo.q3HeadCount++] = trap_R_RegisterShaderNoMip(va("models/players/%s/%s",dirptr,skinname));
+				}
+			}
+
+		}
+
+	// Text Only list
+
+		for (j=0; j<numfiles && uiInfo.q3HeadCount2 < MAX_PLAYERMODELS;j++,fileptr+=filelen+1)
+		{
+			filelen = strlen(fileptr);
+
+			COM_StripExtension(fileptr, skinname, sizeof(skinname));
+
+			// look for icon_????
+			if (Q_stricmpn(skinname, "icon_", 5) == 0 && !(Q_stricmp(skinname,"icon_blue") == 0 || Q_stricmp(skinname,"icon_red") == 0))
+			//if (Q_stricmpn(skinname, "icon_", 5) == 0)	// leilei - show red blue anyway
+
+			{
+				if (Q_stricmp(skinname, "icon_default") == 0) {
+					Com_sprintf( scratch, sizeof(scratch), "%s", dirptr);
+				} else {
+					Com_sprintf( scratch, sizeof(scratch), "%s/%s",dirptr, skinname + 5);
+				}
+				dirty = 0;
+				for(k=0;k<uiInfo.q3HeadCount2;k++) {
+					if (!Q_stricmp(scratch, uiInfo.q3HeadNames2[uiInfo.q3HeadCount2])) {
+						dirty = 1;
+						break;
+					}
+				}
+				if (!dirty) {
+					Com_sprintf( uiInfo.q3HeadNames2[uiInfo.q3HeadCount2], sizeof(uiInfo.q3HeadNames2[uiInfo.q3HeadCount2]), "%s", scratch);
+                                    uiInfo.q3HeadIcons[uiInfo.q3HeadCount2++] = trap_R_RegisterShaderNoMip(va("models/players/%s/%s",dirptr,skinname));
 				}
 			}
 
@@ -6783,6 +6889,9 @@ vmCvar_t	persid;
 vmCvar_t	gameover; // ai script
 // end changed RD
 
+// leilei
+vmCvar_t	ui_introPlayed;
+
 vmCvar_t ui_humansonly;
 
 
@@ -6929,6 +7038,7 @@ static cvarTable_t		cvarTable[] = {
 	{ &persid, "persid", "0", CVAR_INIT},
 	{ &gameover, "gameover", "0", CVAR_INIT}, // ai script
 // end changed RD
+	{ &ui_introPlayed, "ui_introPlayed", "0", CVAR_INIT },
 };
 
 // bk001129 - made static to avoid aliasing

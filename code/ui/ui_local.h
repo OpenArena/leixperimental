@@ -101,6 +101,7 @@ extern vmCvar_t	ui_serverFilterType;
 extern vmCvar_t	ui_dedicated;
 extern vmCvar_t	ui_opponentName;
 extern vmCvar_t	ui_menuFiles;
+extern vmCvar_t	ui_introFiles;
 extern vmCvar_t	ui_currentTier;
 extern vmCvar_t	ui_currentMap;
 extern vmCvar_t	ui_currentNetMap;
@@ -133,7 +134,7 @@ extern vmCvar_t ui_serverStatusTimeOut;
 
 extern vmCvar_t ui_humansonly;
 
-
+extern vmCvar_t	ui_introPlayed;
 
 //
 // ui_qmenu.c
@@ -941,6 +942,7 @@ typedef struct {
 	int				q3HeadCount;
 	char			q3HeadNames[MAX_PLAYERMODELS][64];
 	qhandle_t	q3HeadIcons[MAX_PLAYERMODELS];
+	qhandle_t	q3HeadIcons2[MAX_PLAYERMODELS];
 	qhandle_t	q3Portraits[MAX_PLAYERMODELS];	// leilei - displaying portraits with deferred loading for some screens
 	int				q3SelectedHead;
 
@@ -952,6 +954,8 @@ typedef struct {
 // Changed RD
 	playerInfo_t info;
 // end changed RD
+	int				q3HeadCount2;		// leilei - a complete list for the text list. for saving vram
+	char			q3HeadNames2[MAX_PLAYERMODELS][64];
 }	uiInfo_t;
 
 extern uiInfo_t uiInfo;
